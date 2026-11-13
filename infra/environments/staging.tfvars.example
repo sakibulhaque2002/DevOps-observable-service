@@ -1,0 +1,5 @@
+environment       = "staging"
+aws_region        = "us-east-1"
+instance_type     = "t3.micro"
+allowed_http_cidr = "203.0.113.1/32" # Replace with your public IPv4/32.
+app_image         = "ghcr.io/sakibulhaque2002/devops-observable-service:sha-REPLACE_WITH_FULL_COMMIT_SHA"

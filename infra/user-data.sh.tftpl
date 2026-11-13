@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -euo pipefail
+dnf install -y docker
+systemctl enable --now docker amazon-ssm-agent
+install -d -m 0755 /opt/devops
+install -d -m 0700 /etc/devops
+cat > /etc/devops/service.env <<'ENV'
+AWS_REGION=${region}
+LOG_GROUP=${log_group}
+APP_ENVIRONMENT=${environment}
+ENV
+chmod 0600 /etc/devops/service.env
+printf '%s' '${deploy_script}' | base64 -d > /opt/devops/deploy-container.sh
+chmod 0755 /opt/devops/deploy-container.sh
+cat > /etc/systemd/system/devops-bootstrap.service <<'UNIT'
+[Unit]
+Description=Initial application deployment
+After=docker.service network-online.target
+Wants=network-online.target
+Requires=docker.service
+[Service]
+Type=oneshot
+ExecStart=/opt/devops/deploy-container.sh ${image}
+Restart=on-failure
+RestartSec=30
+RemainAfterExit=yes
+[Install]
+WantedBy=multi-user.target
+UNIT
+systemctl daemon-reload
+systemctl enable --now devops-bootstrap.service
