@@ -1,10 +1,10 @@
 # syntax=docker/dockerfile:1
-FROM python:3.13.18-alpine3.24@sha256:9ef1a599f863231c3d91e941389bfdc4a2d6070557243d54df1a4e57015b960e AS builder
+FROM python:3.15.0-alpine3.24@sha256:2699b90f4d562a22e2dd076c82f964032f64814204bff36d271a54ba4cc2c7e2 AS builder
 WORKDIR /build
 COPY requirements.txt .
 RUN python -m pip wheel --no-cache-dir --wheel-dir /wheels -r requirements.txt
 
-FROM python:3.13.18-alpine3.24@sha256:9ef1a599f863231c3d91e941389bfdc4a2d6070557243d54df1a4e57015b960e AS runtime
+FROM python:3.15.0-alpine3.24@sha256:2699b90f4d562a22e2dd076c82f964032f64814204bff36d271a54ba4cc2c7e2 AS runtime
 ARG VERSION=1.0.0
 ARG REVISION=unknown
 LABEL org.opencontainers.image.title="DevOps Observable Service" \
