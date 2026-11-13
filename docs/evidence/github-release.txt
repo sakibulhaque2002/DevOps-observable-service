@@ -1,0 +1,42 @@
+Verified GitHub and registry evidence — November 14, 2026 (Asia/Dhaka)
+
+Implementation PR (merged):
+https://github.com/sakibulhaque2002/DevOps-observable-service/pull/1
+
+Successful PR CI run:
+https://github.com/sakibulhaque2002/DevOps-observable-service/actions/runs/43510692334
+- Python lint, tests and coverage: success
+- Dockerfile, Bash, Terraform and Kubernetes validation: success
+- Image build, hardened runtime smoke test and CRITICAL vulnerability scan: success
+
+Successful main release:
+https://github.com/sakibulhaque2002/DevOps-observable-service/actions/runs/43511047185
+- All three prerequisite CI jobs: success
+- Multi-architecture image publication: success
+- Release scan, linux/amd64: success
+- Release scan, linux/arm64: success
+- AWS deployment: SKIPPED (role/instance repository variables intentionally unset)
+
+Source commit: 7a27025c592e656fa73d2bdac7a4dccd038904bb
+Tags:
+ghcr.io/sakibulhaque2002/devops-observable-service:sha-7a27025c592e656fa73d2bdac7a4dccd038904bb
+ghcr.io/sakibulhaque2002/devops-observable-service:1.0.0-build.1
+
+Exact published manifest:
+ghcr.io/sakibulhaque2002/devops-observable-service@sha256:537a317940baae0e1a42de01e6d099758e05a51410896fb9d990a5cc237cb442
+
+Anonymous manifest inspection and image pull succeeded using a Docker config with
+no config.json and no registry credentials. The index contains linux/amd64 and
+linux/arm64 runnable images, plus two unknown/unknown attestation manifests.
+
+The published digest was run locally with a read-only root filesystem, dropped
+capabilities, no-new-privileges, and a localhost-only test port:
+- GET /health: HTTP 200, {"status":"healthy"}
+- GET /: HTTP 200, version "1.0.0-build.1"
+- Runtime UID/GID: 10001:10001
+- Read-only root filesystem: true
+- SIGTERM shutdown: exit code 0
+
+This evidence proves hosted CI, publication, scanning, anonymous registry access,
+and a local smoke test of the published artifact. It does not prove AWS apply,
+SSM deployment, CloudWatch ingestion, or resource destruction; those remain pending.

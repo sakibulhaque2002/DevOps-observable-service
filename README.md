@@ -13,7 +13,7 @@ A small Python/FastAPI service delivered through tested containers, GitHub Actio
 | Terraform | Both configurations validate; offline mocked security plan passes |
 | Kubernetes | Two replicas running; HPA receives CPU metrics; real update and rollback completed |
 | Zero-downtime demonstration | 320 in-cluster requests, 0 failures, both 1.0.0 and 1.0.1 observed |
-| GitHub Actions release | Workflow implemented; attach the first successful run after pushing |
+| GitHub Actions release | [PR CI passed](https://github.com/sakibulhaque2002/DevOps-observable-service/actions/runs/43510692334); [multi-architecture release and both scans passed](https://github.com/sakibulhaque2002/DevOps-observable-service/actions/runs/43511047185) |
 | Actual AWS plan/apply and SSM deployment | Pending account activation and authentication; no cloud apply is claimed yet |
 
 See [the evidence index](docs/evidence/README.md). Mocked Terraform tests and deployment-script stand-ins are development checks, not proof of a real AWS deployment.
@@ -56,7 +56,7 @@ Linux is required for the host monitoring mounts and health script. Allocate rou
 | Docker Compose / Buildx | 2.40.3 / 0.39.0 |
 | [Terraform](https://developer.hashicorp.com/terraform/install) | 1.17.2; native S3 locking needs 1.10+ |
 | [kind](https://kind.sigs.k8s.io/docs/user/quick-start/) / kubectl | 0.33.0 / 1.35.0 |
-| AWS CLI v2 | Recent version supporting `aws login`; only needed for AWS work |
+| AWS CLI v2 | 2.40.3; browser login, only needed for AWS work |
 | Bash tools | Bash 4+, awk, coreutils, procps, util-linux/flock, curl, OpenSSL |
 | Linters | ShellCheck 0.11.0, Hadolint 2.14.0; CI runs these checks |
 
@@ -206,11 +206,21 @@ Under **Repository → Settings → Secrets and variables → Actions → Variab
 
 No manually supplied GitHub secret is needed: the built-in `GITHUB_TOKEN` publishes images, and GitHub OIDC obtains short-lived AWS credentials. The deploy job deliberately skips while the role/instance variables are unset, allowing initial image publication before AWS exists. That skip is not successful AWS deployment evidence.
 
-**After the first publication, set the GHCR package visibility to Public** in the package's settings. EC2 pulls anonymously; a public GitHub repository does not guarantee its newly created package is public. Confirm `docker pull ghcr.io/sakibulhaque2002/devops-observable-service:sha-<SHA>` works without credentials before applying Terraform. Subsequent releases can then deploy automatically.
+**This project's first published GHCR image was verified accessible anonymously.** EC2 pulls anonymously, so verify public package visibility again if you fork or recreate the project. A public GitHub repository does not by itself guarantee package visibility. If needed, change visibility under the package's settings, then confirm `docker pull ghcr.io/sakibulhaque2002/devops-observable-service:sha-<SHA>` works without credentials before applying Terraform. Subsequent releases can then deploy automatically.
 
 Use a feature branch and a PR for changes; require the three CI jobs before merging. The deploy role trusts exactly this repository's `main` ref and `sts.amazonaws.com` audience. If you add a GitHub deployment Environment, update the OIDC subject because environment-based subjects have a different format.
 
+The first successful release is `1.0.0-build.1`, source commit `7a27025c592e656fa73d2bdac7a4dccd038904bb`. Its exact manifest digest is:
+
+```text
+ghcr.io/sakibulhaque2002/devops-observable-service@sha256:537a317940baae0e1a42de01e6d099758e05a51410896fb9d990a5cc237cb442
+```
+
+Both platforms were scanned before release completion. The `unknown/unknown` manifest entries are SBOM/provenance attestations, not extra runnable platforms. See [recorded GitHub evidence](docs/evidence/github-release.txt). The AWS deploy job was intentionally skipped; this proves publication and scanning, not deployment to EC2.
+
 ## Terraform and AWS deployment
+
+The assessment testing budget is **$0 out of pocket**. Verify an active eligible AWS Free plan and available credits before creating resources; do not upgrade plans or enable services outside that plan for this assessment. Cloud execution is pending. The production estimate below describes ongoing list-price operation without credits, not money you must invest to complete the local project. [AWS Free plan terms](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/free-tier-plans.html)
 
 The assessment target is one small EC2 instance in the default VPC. Terraform creates an encrypted gp3 disk, IMDSv2 enforcement, one application ingress rule, HTTPS egress, scoped IAM roles, a seven-day CloudWatch log group, and bootstrap/deployment automation. There is no SSH ingress, key pair, NAT gateway, EKS cluster, or static AWS access key. T3 CPU credits use Standard mode to avoid surplus-credit charges.
 
