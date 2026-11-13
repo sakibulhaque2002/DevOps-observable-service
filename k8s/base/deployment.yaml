@@ -28,7 +28,7 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
         - name: app
-          image: ghcr.io/sakibulhaque2002/devops-observable-service:1.0.0
+          image: ghcr.io/sakibulhaque2002/devops-observable-service:1.0.0-build.1
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

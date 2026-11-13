@@ -22,8 +22,8 @@ Use this to track actual evidence; do not mark a cloud step complete from local 
 - [x] Three actual dashboard screenshots and error-investigation walkthrough.
 - [x] Bash health collector: JSON, thresholds, exit codes, rotation, help, ShellCheck and timer.
 - [x] Architecture, design decisions, deployment/rollback, security, costs, improvements and AI-use note.
-- [ ] Push the commits and obtain a successful GitHub Actions release/image-publication run.
-- [ ] Make the published GHCR package public and verify anonymous pull.
+- [x] Push the commits and obtain a successful GitHub Actions release/image-publication run.
+- [x] Verify public GHCR package access and anonymous image pull.
 - [ ] Confirm active AWS Free plan, available credits, and zero out-of-pocket budget compatibility.
 - [ ] Run a real Terraform plan and apply; save sanitized evidence.
 - [ ] Configure GitHub OIDC role/instance variables and obtain a successful SSM deployment workflow run.

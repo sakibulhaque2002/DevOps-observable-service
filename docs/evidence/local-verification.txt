@@ -15,4 +15,4 @@ Final image runtime: uid=10001 gid=10001; read_only=true; health HTTP 200
 SIGTERM: Service stopped gracefully; container exited with code 0
 Final image Trivy CRITICAL findings: 0
 Actual AWS plan/apply/deploy/destroy evidence: pending account and authentication
-GitHub-hosted workflow execution: pending push/authentication
+GitHub-hosted CI and multi-architecture release: passed; see github-release.txt. AWS deploy skipped.
