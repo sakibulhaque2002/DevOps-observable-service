@@ -1,0 +1,13 @@
+[Unit]
+Description=Collect Linux system health
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/local/bin/system_health.sh --json --log-file /var/log/devops-health/health_log.txt
+SuccessExitStatus=1 2
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+NoNewPrivileges=true
+LogsDirectory=devops-health

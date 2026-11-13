@@ -1,0 +1,7 @@
+environment       = "production"
+aws_region        = "us-east-1"
+instance_type     = "t3.micro"
+allowed_http_cidr = "203.0.113.1/32" # Replace with your allowed client network.
+app_image         = "ghcr.io/sakibulhaque2002/devops-observable-service:sha-REPLACE_WITH_FULL_COMMIT_SHA"
+# If staging already created the account-wide GitHub OIDC provider:
+create_github_oidc_provider = false

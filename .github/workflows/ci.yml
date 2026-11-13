@@ -1,0 +1,114 @@
+name: CI
+
+on:
+  pull_request:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: Python lint, tests and coverage
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.12.7"
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: uv run --frozen ruff check app tests scripts/*.py
+      - run: uv run --frozen ruff format --check app tests scripts/*.py
+      - run: uv run --frozen pytest
+      - name: Verify Docker dependency export and dashboard JSON are current
+        run: |
+          uv export --frozen --no-dev --no-hashes --no-emit-project --output-file requirements.txt
+          git diff --exit-code -- requirements.txt
+          uv run --frozen python scripts/generate_dashboards.py
+          git diff --exit-code -- monitoring/grafana/dashboards
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: coverage
+          path: coverage.xml
+          retention-days: 7
+
+  configuration:
+    name: Dockerfile, Bash, Terraform and Kubernetes validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Lint Dockerfile and Bash scripts
+        run: |
+          docker run --rm -i hadolint/hadolint:v2.14.0 < Dockerfile
+          shellcheck scripts/*.sh
+          GRAFANA_ADMIN_PASSWORD=ci-validation-only docker compose --profile monitoring config --quiet
+      - name: Install checksum-verified Terraform
+        env:
+          TF_VERSION: "1.17.2"
+        run: |
+          mkdir -p "$RUNNER_TEMP/terraform"
+          cd "$RUNNER_TEMP/terraform"
+          curl -fsSLO "https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_amd64.zip"
+          curl -fsSLO "https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_SHA256SUMS"
+          sha256sum --check --ignore-missing "terraform_${TF_VERSION}_SHA256SUMS"
+          unzip -q "terraform_${TF_VERSION}_linux_amd64.zip"
+          echo "$PWD" >> "$GITHUB_PATH"
+      - run: |
+          terraform fmt -check -recursive infra
+          terraform -chdir=infra init -backend=false -input=false -lockfile=readonly
+          terraform -chdir=infra validate
+          terraform -chdir=infra test -no-color
+          terraform -chdir=infra/bootstrap init -backend=false -input=false -lockfile=readonly
+          terraform -chdir=infra/bootstrap validate
+          kubectl kustomize k8s/overlays/local > /tmp/rendered-k8s.yaml
+
+  image:
+    name: Build, runtime smoke test and critical vulnerability gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          load: true
+          tags: assessment-ci:${{ github.sha }}
+          cache-from: type=gha,scope=app-amd64
+          cache-to: type=gha,mode=max,scope=app-amd64
+      - name: Verify the image works with a read-only filesystem
+        env:
+          IMAGE: assessment-ci:${{ github.sha }}
+        run: |
+          docker run -d --name app --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges:true -p 127.0.0.1:8080:8080 "$IMAGE"
+          for _ in {1..30}; do
+            if curl -fsS http://127.0.0.1:8080/health; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:8080/health
+          docker exec app id | tee /tmp/runtime-user.txt
+          test "$(docker exec app id -u)" = 10001
+          docker stop --time 30 app
+          docker logs app
+          test "$(docker inspect --format '{{.State.ExitCode}}' app)" = 0
+      - name: Fail on critical image vulnerabilities (including unfixed)
+        env:
+          IMAGE: assessment-ci:${{ github.sha }}
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD:/work" \
+            aquasec/trivy:0.76.2 image --scanners vuln --severity CRITICAL --exit-code 1 \
+            --format json --output /work/trivy.json "$IMAGE"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: vulnerability-report
+          path: trivy.json
+          retention-days: 7

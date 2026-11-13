@@ -1,0 +1,18 @@
+Local verification — 2026-11-13T21:15:00.861562+00:00
+Workspace: DevOps-observable-service
+Python tests: 19 passed; application coverage 94.69% (90% required)
+Ruff lint/format, ShellCheck, Hadolint and actionlint: passed
+Terraform infra and bootstrap validation: passed
+Terraform mocked security plan: 1 passed; no AWS API resources created
+Prometheus config valid; 4 alert rules valid; app/node/cadvisor/prometheus targets up
+Node Exporter physical host network devices verified: enp0s31f6, wlp0s20f3
+Loki received structured app logs through project-scoped Docker discovery
+Kubernetes: 2 ready replicas; HPA received CPU metrics; metrics-server available
+Kubernetes real rolling update and rollback: 320 requests; 0 failures; versions 1.0.0 and 1.0.1
+Final image: devops-observable-service:1.0.0; linux/amd64
+Docker Engine reported image Size: 20666449 bytes (20.67 MB / 19.71 MiB)
+Final image runtime: uid=10001 gid=10001; read_only=true; health HTTP 200
+SIGTERM: Service stopped gracefully; container exited with code 0
+Final image Trivy CRITICAL findings: 0
+Actual AWS plan/apply/deploy/destroy evidence: pending account and authentication
+GitHub-hosted workflow execution: pending push/authentication

@@ -1,0 +1,41 @@
+groups:
+  - name: service-and-infrastructure
+    rules:
+      - alert: ApplicationDown
+        expr: up{job="app"} == 0
+        for: 1m
+        labels: {severity: critical}
+        annotations:
+          summary: Application cannot be scraped for one minute
+          description: "Inspect container health and logs. A failed scrape can indicate app or network failure."
+      - alert: HighApplicationErrorRate
+        expr: |
+          (sum(rate(http_errors_total{job="app",status=~"5.."}[5m]))
+           / clamp_min(sum(rate(http_requests_total{job="app"}[5m])), 0.001) > 0.05)
+          and sum(increase(http_requests_total{job="app"}[5m])) >= 20
+        for: 2m
+        labels: {severity: warning}
+        annotations:
+          summary: More than 5% of requests fail with 5xx
+          description: "At least 20 requests in five minutes are required. Correlate the Application logs panel with path/status metrics."
+      - alert: HostDiskAlmostFull
+        expr: |
+          (1 - node_filesystem_avail_bytes{job="node",fstype!~"tmpfs|overlay|squashfs"}
+           / node_filesystem_size_bytes{job="node",fstype!~"tmpfs|overlay|squashfs"}) > 0.80
+          and on(instance,device,mountpoint) node_filesystem_readonly == 0
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "Filesystem {{ $labels.mountpoint }} exceeds 80% usage"
+          description: "Check retained logs, images, and time-series data before the disk fills."
+      - alert: ContainerMemoryNearLimit
+        expr: |
+          (container_memory_working_set_bytes{job="cadvisor",name!="",image!=""}
+           / container_spec_memory_limit_bytes{job="cadvisor",name!="",image!=""}) > 0.90
+          and container_spec_memory_limit_bytes{job="cadvisor",name!="",image!=""} > 0
+          and container_spec_memory_limit_bytes{job="cadvisor",name!="",image!=""} < 1e15
+        for: 3m
+        labels: {severity: warning}
+        annotations:
+          summary: "Container {{ $labels.name }} uses more than 90% of its memory limit"
+          description: "Inspect load, memory growth, and configured limit; avoid an OOM kill."

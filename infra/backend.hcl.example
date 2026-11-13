@@ -1,0 +1,4 @@
+bucket = "REPLACE-WITH-YOUR-UNIQUE-STATE-BUCKET"
+key    = "staging/terraform.tfstate"
+region = "us-east-1"
+# use_lockfile=true and encrypt=true are configured in versions.tf.
