@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  PORT: "8080"
+  LOG_LEVEL: INFO
+  ENVIRONMENT: local-kubernetes
+  ENABLE_DEMO_ENDPOINTS: "false"
