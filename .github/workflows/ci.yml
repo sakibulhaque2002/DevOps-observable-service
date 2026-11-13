@@ -47,7 +47,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Lint Dockerfile and Bash scripts
         run: |
-          docker run --rm -i hadolint/hadolint:2.14.0 < Dockerfile
+          docker run --rm -i hadolint/hadolint:v2.14.0 < Dockerfile
           shellcheck scripts/*.sh
           GRAFANA_ADMIN_PASSWORD=ci-validation-only docker compose --profile monitoring config --quiet
       - name: Install checksum-verified Terraform
