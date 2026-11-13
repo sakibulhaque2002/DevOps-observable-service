@@ -1,0 +1,1 @@
+"""Observable assessment application."""
