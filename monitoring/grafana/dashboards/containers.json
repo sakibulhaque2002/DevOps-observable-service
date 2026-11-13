@@ -1,0 +1,137 @@
+{
+  "uid": "devops-containers",
+  "title": "DevOps / Containers",
+  "tags": [
+    "devops-assessment"
+  ],
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "timezone": "browser",
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "title": "Container CPU usage (cores)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by(name) (rate(container_cpu_usage_seconds_total{job=\"cadvisor\",name=~\"devops-observable.*\",image!=\"\"}[1m]))",
+          "legendFormat": "{{name}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "showTime": true,
+        "showLabels": false
+      },
+      "id": 1
+    },
+    {
+      "title": "Container memory working set",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by(name) (container_memory_working_set_bytes{job=\"cadvisor\",name=~\"devops-observable.*\",image!=\"\"})",
+          "legendFormat": "{{name}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "showTime": true,
+        "showLabels": false
+      },
+      "id": 2
+    },
+    {
+      "title": "Container memory relative to limit",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100 * (container_memory_working_set_bytes{job=\"cadvisor\",name=~\"devops-observable.*\",image!=\"\"} / container_spec_memory_limit_bytes{job=\"cadvisor\",name=~\"devops-observable.*\",image!=\"\"}) and container_spec_memory_limit_bytes{job=\"cadvisor\",name=~\"devops-observable.*\",image!=\"\"} > 0 and container_spec_memory_limit_bytes{job=\"cadvisor\",name=~\"devops-observable.*\",image!=\"\"} < 1e15",
+          "legendFormat": "{{name}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "showTime": true,
+        "showLabels": false
+      },
+      "id": 3
+    }
+  ]
+}
