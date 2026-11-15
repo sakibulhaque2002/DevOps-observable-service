@@ -1,0 +1,38 @@
+Actual application JSON logs retrieved from /devops-task/staging/app, stream app.
+
+{"timestamp": "2026-11-15T19:24:27.255761+00:00", "level": "info", "message": "Started server process [1]"}
+{"timestamp": "2026-11-15T19:24:27.256131+00:00", "level": "info", "message": "Waiting for application startup."}
+{"timestamp": "2026-11-15T19:24:27.261255+00:00", "level": "info", "message": "Service started", "environment": "staging"}
+{"timestamp": "2026-11-15T19:24:27.261481+00:00", "level": "info", "message": "Application startup complete."}
+{"timestamp": "2026-11-15T19:24:27.262062+00:00", "level": "info", "message": "Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)"}
+{"timestamp": "2026-11-15T19:24:28.546657+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/health", "status": 200, "duration_seconds": 0.002406, "environment": "staging", "version": "1.0.0-build.1"}
+{"timestamp": "2026-11-15T19:24:31.580488+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/health", "status": 200, "duration_seconds": 0.000966, "environment": "staging", "version": "1.0.0-build.1"}
+{"timestamp": "2026-11-15T19:24:41.660439+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/health", "status": 200, "duration_seconds": 0.000399, "environment": "staging", "version": "1.0.0-build.1"}
+{"timestamp": "2026-11-15T19:24:57.576066+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/health", "status": 200, "duration_seconds": 0.000616, "environment": "staging", "version": "1.0.0-build.1"}
+{"timestamp": "2026-11-15T19:25:15.982108+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/health", "status": 200, "duration_seconds": 0.000447, "environment": "staging", "version": "1.0.0-build.1"}
+{"timestamp": "2026-11-15T19:25:31.084451+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/health", "status": 200, "duration_seconds": 0.000454, "environment": "staging", "version": "1.0.0-build.1"}
+{"timestamp": "2026-11-15T19:25:46.886501+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/health", "status": 200, "duration_seconds": 0.000455, "environment": "staging", "version": "1.0.0-build.1"}
+{"timestamp": "2026-11-15T19:26:02.687398+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/health", "status": 200, "duration_seconds": 0.000442, "environment": "staging", "version": "1.0.0-build.1"}
+{"timestamp": "2026-11-15T19:26:18.487172+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/health", "status": 200, "duration_seconds": 0.000448, "environment": "staging", "version": "1.0.0-build.1"}
+{"timestamp": "2026-11-15T19:26:34.280685+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/health", "status": 200, "duration_seconds": 0.000454, "environment": "staging", "version": "1.0.0-build.1"}
+{"timestamp": "2026-11-15T19:26:50.072382+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/health", "status": 200, "duration_seconds": 0.000453, "environment": "staging", "version": "1.0.0-build.1"}
+{"timestamp": "2026-11-15T19:27:05.885486+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/health", "status": 200, "duration_seconds": 0.000452, "environment": "staging", "version": "1.0.0-build.1"}
+{"timestamp": "2026-11-15T19:27:21.683201+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/health", "status": 200, "duration_seconds": 0.000452, "environment": "staging", "version": "1.0.0-build.1"}
+{"timestamp": "2026-11-15T19:27:37.477772+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/health", "status": 200, "duration_seconds": 0.000507, "environment": "staging", "version": "1.0.0-build.1"}
+{"timestamp": "2026-11-15T19:27:53.266352+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/health", "status": 200, "duration_seconds": 0.000439, "environment": "staging", "version": "1.0.0-build.1"}
+{"timestamp": "2026-11-15T19:28:09.072281+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/health", "status": 200, "duration_seconds": 0.000451, "environment": "staging", "version": "1.0.0-build.1"}
+{"timestamp": "2026-11-15T19:28:24.886950+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/health", "status": 200, "duration_seconds": 0.00044, "environment": "staging", "version": "1.0.0-build.1"}
+{"timestamp": "2026-11-15T19:28:40.689084+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/health", "status": 200, "duration_seconds": 0.00046, "environment": "staging", "version": "1.0.0-build.1"}
+{"timestamp": "2026-11-15T19:28:56.482242+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/health", "status": 200, "duration_seconds": 0.000442, "environment": "staging", "version": "1.0.0-build.1"}
+{"timestamp": "2026-11-15T19:29:12.275683+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/health", "status": 200, "duration_seconds": 0.000455, "environment": "staging", "version": "1.0.0-build.1"}
+
+Actual final GitHub-deployed release events:
+
+{"timestamp": "2026-11-15T20:16:48.652794+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/health", "status": 200, "duration_seconds": 0.001102, "environment": "staging", "version": "1.0.0-build.5"}
+{"timestamp": "2026-11-15T20:16:58.466417+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/health", "status": 200, "duration_seconds": 0.000568, "environment": "staging", "version": "1.0.0-build.5"}
+{"timestamp": "2026-11-15T20:17:14.293130+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/health", "status": 200, "duration_seconds": 0.000472, "environment": "staging", "version": "1.0.0-build.5"}
+{"timestamp": "2026-11-15T20:17:28.039028+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/health", "status": 200, "duration_seconds": 0.000557, "environment": "staging", "version": "1.0.0-build.5"}
+{"timestamp": "2026-11-15T20:17:28.045814+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/", "status": 200, "duration_seconds": 0.000632, "environment": "staging", "version": "1.0.0-build.5"}
+{"timestamp": "2026-11-15T20:17:28.053988+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/metrics", "status": 200, "duration_seconds": 0.001168, "environment": "staging", "version": "1.0.0-build.5"}
+{"timestamp": "2026-11-15T20:17:30.109143+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/health", "status": 200, "duration_seconds": 0.000491, "environment": "staging", "version": "1.0.0-build.5"}
+{"timestamp": "2026-11-15T20:17:45.996718+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/health", "status": 200, "duration_seconds": 0.000451, "environment": "staging", "version": "1.0.0-build.5"}

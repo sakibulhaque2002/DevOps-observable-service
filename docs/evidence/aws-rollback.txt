@@ -1,0 +1,50 @@
+Actual EC2 rollback exercise — November 16, 2026 (Asia/Dhaka)
+
+The real deployment script ran against real Docker containers. A temporary curl wrapper injected 30 failures only into the post-switch localhost health probe. Candidate health used real curl, and restored-container health used real curl. This tests a failed probe/transport path; the application itself was not modified to return errors.
+
+BEFORE_IMAGE=ghcr.io/sakibulhaque2002/devops-observable-service@sha256:537a317940baae0e1a42de01e6d099758e05a51410896fb9d990a5cc237cb442
+TARGET_IMAGE=ghcr.io/sakibulhaque2002/devops-observable-service@sha256:01ed9289c82f03a74c8a7422d0d4fd8e19ad9cf358d774f5c2091854c10c917a
+ghcr.io/sakibulhaque2002/devops-observable-service@sha256:01ed9289c82f03a74c8a7422d0d4fd8e19ad9cf358d774f5c2091854c10c917a: Pulling from sakibulhaque2002/devops-observable-service
+881fc932939e: Already exists
+ce6949f6b532: Already exists
+f9abc654947e: Already exists
+17af2db0edc9: Already exists
+543e795a80b0: Pulling fs layer
+dd471d34d430: Pulling fs layer
+a7f40a72805e: Pulling fs layer
+80ab5f3963bf: Pulling fs layer
+80ab5f3963bf: Waiting
+543e795a80b0: Download complete
+dd471d34d430: Verifying Checksum
+dd471d34d430: Download complete
+543e795a80b0: Pull complete
+dd471d34d430: Pull complete
+a7f40a72805e: Verifying Checksum
+a7f40a72805e: Download complete
+a7f40a72805e: Pull complete
+80ab5f3963bf: Verifying Checksum
+80ab5f3963bf: Download complete
+80ab5f3963bf: Pull complete
+Digest: sha256:01ed9289c82f03a74c8a7422d0d4fd8e19ad9cf358d774f5c2091854c10c917a
+Status: Downloaded newer image for ghcr.io/sakibulhaque2002/devops-observable-service@sha256:01ed9289c82f03a74c8a7422d0d4fd8e19ad9cf358d774f5c2091854c10c917a
+ghcr.io/sakibulhaque2002/devops-observable-service@sha256:01ed9289c82f03a74c8a7422d0d4fd8e19ad9cf358d774f5c2091854c10c917a
+b20871e2a3c658c5970fe505f96641863c4adf39dbddf247af76ef6b09c12771
+0453238208f7589a027b4cf30c592c5cd22e47a4aacc33be20fbc11aa560f850
+EXPECTED_DEPLOY_EXIT=1
+INJECTED_PROBE_FAILURES=30
+RESTORED_IMAGE=ghcr.io/sakibulhaque2002/devops-observable-service@sha256:537a317940baae0e1a42de01e6d099758e05a51410896fb9d990a5cc237cb442
+{"status":"healthy"}
+ROLLBACK_VERIFIED
+
+Smoke test failed; restoring previous release.
+{"timestamp": "2026-11-15T19:38:50.847992+00:00", "level": "info", "message": "Started server process [1]"}
+{"timestamp": "2026-11-15T19:38:50.848299+00:00", "level": "info", "message": "Waiting for application startup."}
+{"timestamp": "2026-11-15T19:38:50.851517+00:00", "level": "info", "message": "Service started", "environment": "staging"}
+{"timestamp": "2026-11-15T19:38:50.851706+00:00", "level": "info", "message": "Application startup complete."}
+{"timestamp": "2026-11-15T19:38:50.852089+00:00", "level": "info", "message": "Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)"}
+{"timestamp": "2026-11-15T19:39:02.627613+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/health", "status": 200, "duration_seconds": 0.001002, "environment": "staging", "version": "1.0.0-build.3"}
+{"timestamp": "2026-11-15T19:39:18.422026+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/health", "status": 200, "duration_seconds": 0.000537, "environment": "staging", "version": "1.0.0-build.3"}
+{"timestamp": "2026-11-15T19:39:34.218187+00:00", "level": "info", "message": "HTTP request completed", "method": "GET", "path": "/health", "status": 200, "duration_seconds": 0.000464, "environment": "staging", "version": "1.0.0-build.3"}
+Rollback completed; previous release is healthy.
+
+SSM test status: Success

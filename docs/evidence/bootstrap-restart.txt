@@ -1,0 +1,27 @@
+Actual EC2 service restart regression test. The application was upgraded from the bootstrap image, then the bootstrap unit was restarted; the running release was preserved.
+
+ghcr.io/sakibulhaque2002/devops-observable-service@sha256:01ed9289c82f03a74c8a7422d0d4fd8e19ad9cf358d774f5c2091854c10c917a: Pulling from sakibulhaque2002/devops-observable-service
+Digest: sha256:01ed9289c82f03a74c8a7422d0d4fd8e19ad9cf358d774f5c2091854c10c917a
+Status: Image is up to date for ghcr.io/sakibulhaque2002/devops-observable-service@sha256:01ed9289c82f03a74c8a7422d0d4fd8e19ad9cf358d774f5c2091854c10c917a
+ghcr.io/sakibulhaque2002/devops-observable-service@sha256:01ed9289c82f03a74c8a7422d0d4fd8e19ad9cf358d774f5c2091854c10c917a
+71f32accd473a4c220ae302a21d4e90c711019f61e732a340c97db49c05099d5
+f88cd0fa31787b782d32e6128ecb32475490014e54cfe6a3968d8305190f9010
+Deployed ghcr.io/sakibulhaque2002/devops-observable-service@sha256:01ed9289c82f03a74c8a7422d0d4fd8e19ad9cf358d774f5c2091854c10c917a; /health passed. Previous container retained for rollback.
+{"message":"Hello from DevOps Task!","status":"running","version":"1.0.0-build.3"}
+Bootstrap restart preserved the running image: ghcr.io/sakibulhaque2002/devops-observable-service@sha256:01ed9289c82f03a74c8a7422d0d4fd8e19ad9cf358d774f5c2091854c10c917a
+○ devops-bootstrap.service - Initial application deployment
+     Loaded: loaded (/etc/systemd/system/devops-bootstrap.service; enabled; preset: disabled)
+     Active: inactive (dead) (Result: exec-condition) since Sun 2026-11-15 19:41:31 UTC; 25ms ago
+   Duration: 11min 53.274s
+  Condition: start condition failed at Sun 2026-11-15 19:41:31 UTC; 62ms ago
+    Process: 31637 ExecCondition=/usr/bin/bash -c ! /usr/bin/docker container inspect app >/dev/null 2>&1 (code=exited, status=1/FAILURE)
+        CPU: 21ms
+
+Nov 15 19:41:31 EC2_HOST systemd[1]: Starting devops-bootstrap.service - Initial application deployment...
+Nov 15 19:41:31 EC2_HOST systemd[1]: devops-bootstrap.service: Skipped due to 'exec-condition'.
+Nov 15 19:41:31 EC2_HOST systemd[1]: Condition check resulted in devops-bootstrap.service - Initial application deployment being skipped.
+{"status":"healthy"}
+BOOTSTRAP_GUARD_VERIFIED
+
+
+SSM test status: Success

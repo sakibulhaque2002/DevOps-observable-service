@@ -1,0 +1,40 @@
+Actual EC2 verification after GitHub deployment, through authenticated SSM.
+
+2026-11-15T20:17:27+00:00
+status: done
+IMAGE=ghcr.io/sakibulhaque2002/devops-observable-service@sha256:4c9f2dec007106060a2468e0841bd3e0ef2c20cc3439d549ab9721238390cdf4 USER=10001:10001 READ_ONLY=true HEALTH=healthy MEMORY=134217728 PIDS=64 LOG_DRIVER=awslogs
+{"status":"healthy"}
+{"message":"Hello from DevOps Task!","status":"running","version":"1.0.0-build.5"}
+# HELP http_requests_total Completed HTTP requests
+# TYPE http_requests_total counter
+http_requests_total{method="GET",path="/health",status="200"} 4.0
+http_requests_total{method="GET",path="/",status="200"} 1.0
+# HELP http_requests_created Completed HTTP requests
+# TYPE http_requests_created gauge
+http_requests_created{method="GET",path="/health",status="200"} 1.79477380865257e+09
+http_requests_created{method="GET",path="/",status="200"} 1.794773848045623e+09
+# HELP http_errors_total HTTP responses with status >= 400
+# TYPE http_errors_total counter
+# HELP http_request_duration_seconds Request latency in seconds
+# TYPE http_request_duration_seconds histogram
+http_request_duration_seconds_bucket{le="0.005",method="GET",path="/health"} 4.0
+http_request_duration_seconds_bucket{le="0.01",method="GET",path="/health"} 4.0
+http_request_duration_seconds_bucket{le="0.025",method="GET",path="/health"} 4.0
+http_request_duration_seconds_bucket{le="0.05",method="GET",path="/health"} 4.0
+http_request_duration_seconds_bucket{le="0.1",method="GET",path="/health"} 4.0
+http_request_duration_seconds_bucket{le="0.25",method="GET",path="/health"} 4.0
+
+BOOTSTRAP_CONDITION={ path=/usr/bin/bash ; argv[]=/usr/bin/bash -c ! /usr/bin/docker container inspect app >/dev/null 2>&1 ; ignore_errors=no ; start_time=[Sun 2026-11-15 19:41:31 UTC] ; stop_time=[Sun 2026-11-15 19:41:31 UTC] ; pid=31637 ; code=exited ; status=1 }
+
+SSH_RESTRICTIONS
+permitrootlogin no
+passwordauthentication no
+x11forwarding no
+allowtcpforwarding no
+allowagentforwarding no
+allowusers devops-deploy
+authenticationmethods publickey
+
+CLOUD_RUNTIME_VERIFIED
+
+SSM status: Success

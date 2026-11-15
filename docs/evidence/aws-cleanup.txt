@@ -1,0 +1,70 @@
+Actual AWS cleanup — November 16, 2026 (Asia/Dhaka)
+
+Reviewed destroy plan: exactly 9 delete actions; no S3 bucket resource.
+
+aws_vpc_security_group_ingress_rule.http: Destroying... [id=sgr-0b2f4c5c4d82e9753]
+aws_vpc_security_group_egress_rule.https: Destroying... [id=sgr-0d7a6cb741278e79f]
+aws_vpc_security_group_ingress_rule.ssh[0]: Destroying... [id=sgr-05cf9498ddce31609]
+aws_instance.app: Destroying... [id=INSTANCE_ID]
+aws_vpc_security_group_ingress_rule.http: Destruction complete after 1s
+aws_vpc_security_group_egress_rule.https: Destruction complete after 1s
+aws_vpc_security_group_ingress_rule.ssh[0]: Destruction complete after 1s
+aws_instance.app: Still destroying... [id=INSTANCE_ID, 00m10s elapsed]
+aws_instance.app: Still destroying... [id=INSTANCE_ID, 00m20s elapsed]
+aws_instance.app: Still destroying... [id=INSTANCE_ID, 00m30s elapsed]
+aws_instance.app: Destruction complete after 31s
+aws_iam_role_policy.instance: Destroying... [id=devops-task-staging-instance:ssm-and-app-logs]
+aws_iam_instance_profile.app: Destroying... [id=devops-task-staging]
+aws_security_group.app: Destroying... [id=sg-0ae833c5c6dad8400]
+aws_security_group.app: Destruction complete after 1s
+aws_iam_role_policy.instance: Destruction complete after 1s
+aws_cloudwatch_log_group.app: Destroying... [id=/devops-task/staging/app]
+aws_iam_instance_profile.app: Destruction complete after 2s
+aws_iam_role.instance: Destroying... [id=devops-task-staging-instance]
+aws_cloudwatch_log_group.app: Destruction complete after 1s
+aws_iam_role.instance: Destruction complete after 1s
+Releasing state lock. This may take a few moments...
+
+Apply complete! Resources: 0 added, 0 changed, 9 destroyed.
+
+Independent API and Terraform state verification:
+{
+  "verified_at_utc": "2026-11-15T20:20:25.468684+00:00",
+  "instance_state": "terminated",
+  "root_volume": {
+    "absent": true,
+    "verified_error": "InvalidVolume.NotFound"
+  },
+  "security_group": {
+    "absent": true,
+    "verified_error": "InvalidGroup.NotFound"
+  },
+  "instance_role": {
+    "absent": true,
+    "verified_error": "NoSuchEntity"
+  },
+  "instance_profile": {
+    "absent": true,
+    "verified_error": "NoSuchEntity"
+  },
+  "log_group_absent": true,
+  "terraform_state_resources": 0,
+  "existing_s3_bucket": {
+    "retained": true,
+    "versioning": "Enabled",
+    "application_state_key": "observable-service/staging/terraform.tfstate"
+  },
+  "account_plan": {
+    "accountPlanType": "FREE",
+    "accountPlanStatus": "ACTIVE",
+    "accountPlanRemainingCredits": {
+      "amount": 120.0,
+      "unit": "USD"
+    }
+  },
+  "github_environment_secrets": [],
+  "github_deployment_targets_cleared": true,
+  "generated_local_private_key_removed": true
+}
+
+Existing S3 bucket retained intentionally. Credits are the API-reported balance at verification, not a final invoice; usage accounting can lag. No account upgrade was performed.

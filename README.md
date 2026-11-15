@@ -10,13 +10,15 @@ A small Python/FastAPI service delivered through tested containers, GitHub Actio
 | Docker hardening and health check | Built and run locally as UID/GID 10001 with a read-only root filesystem |
 | Critical vulnerability gate | Local Trivy scan passed with zero CRITICAL vulnerabilities; repeated in CI |
 | Monitoring and dashboards | All scrape targets up; app logs in Loki; screenshots below |
-| Terraform | Both configurations validate; two offline mocked security plans pass |
+| Terraform | Both configurations validate; two mocked security plans pass; actual Sydney apply created 9 resources |
 | Kubernetes | Two replicas running; HPA receives CPU metrics; real update and rollback completed |
 | Zero-downtime demonstration | 320 in-cluster requests, 0 failures, both 1.0.0 and 1.0.1 observed |
-| GitHub Actions release | [PR CI passed](https://github.com/sakibulhaque2002/DevOps-observable-service/actions/runs/43510692334); [multi-architecture release and both scans passed](https://github.com/sakibulhaque2002/DevOps-observable-service/actions/runs/43511047185) |
-| Actual AWS plan/apply and SSM deployment | Pending account activation and authentication; no cloud apply is claimed yet |
+| GitHub Actions release and EC2 deployment | [CI, multi-architecture publication, both scans and protected SSH deployment passed](https://github.com/sakibulhaque2002/DevOps-observable-service/actions/runs/43756516444); EC2 served `1.0.0-build.5` |
+| Actual AWS plan/apply | [Saved plan](docs/evidence/aws-plan.txt) and [successful apply](docs/evidence/aws-apply.txt), Sydney, active Free plan |
+| EC2 health, logs and rollback | Real containers healthy; [CloudWatch logs](docs/evidence/cloudwatch-logs.txt); [failed-probe rollback passed](docs/evidence/aws-rollback.txt) |
+| AWS and credential cleanup | [All 9 test resources destroyed and absence verified](docs/evidence/aws-cleanup.txt); [deployment secret/key removed](docs/evidence/credential-cleanup.txt); existing S3 bucket retained |
 
-See [the evidence index](docs/evidence/README.md). Mocked Terraform tests and deployment-script stand-ins are development checks, not proof of a real AWS deployment.
+See [the evidence index](docs/evidence/README.md). Mocked Terraform tests and deployment-script stand-ins are development checks; the separate cloud evidence records actual AWS operations.
 
 ## Architecture
 
@@ -202,7 +204,7 @@ Under **Repository → Settings → Secrets and variables → Actions → Variab
 
 | Repository variable | Value |
 |---|---|
-| `AWS_REGION` | `us-east-1` |
+| `AWS_REGION` | Your Terraform region; `ap-southeast-2` for this assessment |
 | `AWS_ROLE_ARN` | Terraform `github_deploy_role_arn` output; SSM mode only |
 | `EC2_INSTANCE_ID` | Terraform `instance_id` output; SSM mode |
 | `DEPLOYMENT_METHOD` | `ssm` (default if unset) or `ssh` |
@@ -223,9 +225,17 @@ ghcr.io/sakibulhaque2002/devops-observable-service@sha256:537a317940baae0e1a42de
 
 Both platforms were scanned before release completion. The `unknown/unknown` manifest entries are SBOM/provenance attestations, not extra runnable platforms. See [recorded GitHub evidence](docs/evidence/github-release.txt). The AWS deploy job was intentionally skipped; this proves publication and scanning, not deployment to EC2.
 
+The later [actual EC2 deployment run](https://github.com/sakibulhaque2002/DevOps-observable-service/actions/runs/43756516444) passed all CI jobs, published/scanned both architectures, received owner approval for the `assessment` environment, and deployed `1.0.0-build.5` over restricted SSH. Its exact image was:
+
+```text
+ghcr.io/sakibulhaque2002/devops-observable-service@sha256:4c9f2dec007106060a2468e0841bd3e0ef2c20cc3439d549ab9721238390cdf4
+```
+
+See [deployment output](docs/evidence/github-deployment.txt) and [EC2 runtime checks](docs/evidence/ec2-runtime.txt). The separate [live rollback exercise](docs/evidence/aws-rollback.txt) injected a failing post-switch probe and verified restoration of the previous real container. HTTP smoke tests ran on EC2 against localhost; the operator's rotating ISP NAT address prevented a direct public HTTP check through the deliberately retained client `/32` rule.
+
 ## Terraform and AWS deployment
 
-The assessment testing budget is **$0 out of pocket**. Verify an active eligible AWS Free plan and available credits before creating resources; do not upgrade plans or enable services outside that plan for this assessment. Cloud execution is pending. The production estimate below describes ongoing list-price operation without credits, not money you must invest to complete the local project. [AWS Free plan terms](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/free-tier-plans.html)
+The assessment testing budget is **$0 out of pocket**. AWS API checks confirmed an active Free plan and $100 in available credits before the Sydney deployment. No plan upgrade was performed. Verify your own plan and credits before reproducing this deployment; usage accounting can be delayed. The production estimate below describes ongoing list-price operation without credits. [AWS Free plan terms](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/free-tier-plans.html)
 
 The assessment target is one small EC2 instance in the default VPC. Terraform creates an encrypted gp3 disk, IMDSv2 enforcement, one application ingress rule, HTTPS egress, scoped IAM roles, a seven-day CloudWatch log group, and bootstrap/deployment automation. The default SSM mode has no SSH ingress or deployment key. Optional SSH mode opens port 22 for its dedicated forced-command key. Neither mode creates a NAT gateway, EKS cluster, or static AWS access key. T3 CPU credits use Standard mode to avoid surplus-credit charges.
 
@@ -297,7 +307,9 @@ terraform -chdir=infra apply destroy.tfplan
 
 Confirm EC2 termination, disk removal, log-group removal, and role/security-group cleanup. This deliberately removes the assessment application's retained CloudWatch logs, so capture evidence first. Repeat for production if you created it. Clear the GitHub EC2/role variables afterward to avoid future deploy attempts to a destroyed instance.
 
-The state bucket has `force_destroy=false`. After all application resources are gone and you have securely retained any required evidence, empty **all versions and delete markers** of the state bucket through the S3 console, then run `terraform -chdir=infra/bootstrap destroy -var="bucket_name=$TF_STATE_BUCKET"`. Do not delete live environment state or destroy the shared OIDC provider while another environment needs it.
+The state bucket has `force_destroy=false`. If you created a dedicated assessment bucket using `infra/bootstrap`, after all its application resources are gone and you have securely retained the required evidence, empty **all versions and delete markers** through the S3 console, then run `terraform -chdir=infra/bootstrap destroy -var="bucket_name=$TF_STATE_BUCKET"`. Do not empty a pre-existing shared bucket, delete live environment state, or destroy a shared OIDC provider while another environment needs it.
+
+For this assessment, cleanup destroyed all 9 application resources and independently verified EC2 termination, root-volume deletion, and absence of the security group, instance role/profile and log group. The existing versioned S3 bucket was retained with the now-empty application state at its separate key. The GitHub environment secret was deleted, the authorized key revoked, the generated local private key removed, and target variables cleared. The account remained on the active Free plan. See [cleanup evidence](docs/evidence/aws-cleanup.txt). Subsequent documentation releases intentionally skip deployment because the target no longer exists.
 
 ## Deployment & Rollback Strategy
 
@@ -458,7 +470,7 @@ Image/runtime versions and Actions revisions are pinned; Trivy gates CRITICAL fi
 
 ## Rough monthly AWS cost
 
-Estimate for the current single-instance footprint in `us-east-1`, 730 hours/month, Linux on-demand, before credits, free allowances, taxes, and variable data transfer:
+Reference production estimate for this single-instance design in `us-east-1`, 730 hours/month, Linux on-demand, before credits, free allowances, taxes, and variable data transfer. The assessment was actually tested in Sydney (`ap-southeast-2`); regional prices differ:
 
 | Item | Assumption | Approx. USD/month |
 |---|---|---:|
@@ -477,4 +489,4 @@ Add a reverse proxy/load balancer for uninterrupted EC2 traffic, independent env
 
 ## AI assistance
 
-OpenAI Codex assisted with implementation, configuration, tests, documentation, and local verification. The repository distinguishes generated configuration, mocked checks, real local evidence, and pending cloud evidence. I review the changes and must be able to explain each part; AI assistance does not substitute for actual deployment results.
+OpenAI Codex assisted with implementation, configuration, tests, documentation, and local and AWS verification. The repository distinguishes generated configuration, mocked checks, real local evidence, and actual cloud evidence. The submitter must review the changes and be able to explain each part; AI assistance does not substitute for actual deployment results.

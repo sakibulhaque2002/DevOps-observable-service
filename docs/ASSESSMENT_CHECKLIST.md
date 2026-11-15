@@ -24,11 +24,11 @@ Use this to track actual evidence; do not mark a cloud step complete from local 
 - [x] Architecture, design decisions, deployment/rollback, security, costs, improvements and AI-use note.
 - [x] Push the commits and obtain a successful GitHub Actions release/image-publication run.
 - [x] Verify public GHCR package access and anonymous image pull.
-- [ ] Confirm active AWS Free plan, available credits, and zero out-of-pocket budget compatibility.
-- [ ] Run a real Terraform plan and apply; save sanitized evidence.
-- [ ] Configure GitHub OIDC role/instance variables and obtain a successful SSM deployment workflow run.
-- [ ] Exercise/inspect cloud smoke-test and rollback behavior; save evidence.
-- [ ] Destroy AWS resources, clean up state storage when appropriate, and save sanitized destruction evidence.
+- [x] Confirm active AWS Free plan, available credits, and zero out-of-pocket budget compatibility.
+- [x] Run a real Terraform plan and apply; save sanitized evidence.
+- [x] Obtain a successful GitHub Actions EC2 deployment run (restricted SSH for this account; OIDC/SSM supported for standard accounts).
+- [x] Exercise cloud smoke-test and automatic rollback behavior against actual containers; save evidence.
+- [x] Destroy the 9 application resources, verify absence and empty state, remove test credentials/targets, and retain the existing S3 bucket; save sanitized evidence.
 - [ ] Review all code and rehearse the explanations before submitting the public repository URL.
 
-The cloud-related configuration exists, but activation, authentication and live evidence remain separate tasks.
+The account's AWS-managed policy blocks IAM identity-provider operations. The SSH alternative preserves the Free plan; the default OIDC/SSM implementation remains available for standard accounts. See the evidence index for actual results.
