@@ -1,0 +1,356 @@
+Actual saved Sydney plan; identifiers redacted.
+
+data.aws_partition.current: Reading...
+data.aws_vpc.default: Reading...
+data.aws_ssm_parameter.al2023: Reading...
+data.aws_caller_identity.current: Reading...
+data.aws_partition.current: Read complete after 0s [id=aws]
+data.aws_caller_identity.current: Read complete after 0s [id=ACCOUNT_ID]
+data.aws_ssm_parameter.al2023: Read complete after 1s [id=/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64]
+data.aws_vpc.default: Read complete after 2s [id=vpc-026972a1539add726]
+data.aws_subnets.default: Reading...
+data.aws_subnets.default: Read complete after 0s [id=ap-southeast-2]
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # aws_cloudwatch_log_group.app will be created
+  + resource "aws_cloudwatch_log_group" "app" {
+      + arn                         = (known after apply)
+      + deletion_protection_enabled = (known after apply)
+      + id                          = (known after apply)
+      + log_group_class             = (known after apply)
+      + name                        = "/devops-task/staging/app"
+      + name_prefix                 = (known after apply)
+      + region                      = "ap-southeast-2"
+      + retention_in_days           = 7
+      + skip_destroy                = false
+      + tags_all                    = {
+          + "Environment" = "staging"
+          + "ManagedBy"   = "Terraform"
+          + "Project"     = "devops-observable-service"
+        }
+    }
+
+  # aws_iam_instance_profile.app will be created
+  + resource "aws_iam_instance_profile" "app" {
+      + arn         = (known after apply)
+      + create_date = (known after apply)
+      + id          = (known after apply)
+      + name        = "devops-task-staging"
+      + name_prefix = (known after apply)
+      + path        = "/"
+      + role        = "devops-task-staging-instance"
+      + tags_all    = {
+          + "Environment" = "staging"
+          + "ManagedBy"   = "Terraform"
+          + "Project"     = "devops-observable-service"
+        }
+      + unique_id   = (known after apply)
+    }
+
+  # aws_iam_role.instance will be created
+  + resource "aws_iam_role" "instance" {
+      + arn                   = (known after apply)
+      + assume_role_policy    = jsonencode(
+            {
+              + Statement = [
+                  + {
+                      + Action    = "sts:AssumeRole"
+                      + Effect    = "Allow"
+                      + Principal = {
+                          + Service = "ec2.amazonaws.com"
+                        }
+                    },
+                ]
+              + Version   = "2012-10-17"
+            }
+        )
+      + create_date           = (known after apply)
+      + force_detach_policies = false
+      + id                    = (known after apply)
+      + managed_policy_arns   = (known after apply)
+      + max_session_duration  = 3600
+      + name                  = "devops-task-staging-instance"
+      + name_prefix           = (known after apply)
+      + path                  = "/"
+      + tags_all              = {
+          + "Environment" = "staging"
+          + "ManagedBy"   = "Terraform"
+          + "Project"     = "devops-observable-service"
+        }
+      + unique_id             = (known after apply)
+
+      + inline_policy (known after apply)
+    }
+
+  # aws_iam_role_policy.instance will be created
+  + resource "aws_iam_role_policy" "instance" {
+      + id          = (known after apply)
+      + name        = "ssm-and-app-logs"
+      + name_prefix = (known after apply)
+      + policy      = (known after apply)
+      + role        = (known after apply)
+    }
+
+  # aws_instance.app will be created
+  + resource "aws_instance" "app" {
+      + ami                                  = (sensitive value)
+      + arn                                  = (known after apply)
+      + associate_public_ip_address          = true
+      + availability_zone                    = (known after apply)
+      + disable_api_stop                     = (known after apply)
+      + disable_api_termination              = (known after apply)
+      + ebs_optimized                        = (known after apply)
+      + enable_primary_ipv6                  = (known after apply)
+      + force_destroy                        = false
+      + get_password_data                    = false
+      + host_id                              = (known after apply)
+      + host_resource_group_arn              = (known after apply)
+      + iam_instance_profile                 = "devops-task-staging"
+      + id                                   = (known after apply)
+      + instance_initiated_shutdown_behavior = (known after apply)
+      + instance_lifecycle                   = (known after apply)
+      + instance_state                       = (known after apply)
+      + instance_type                        = "t3.micro"
+      + ipv6_address_count                   = (known after apply)
+      + ipv6_addresses                       = (known after apply)
+      + key_name                             = (known after apply)
+      + monitoring                           = (known after apply)
+      + outpost_arn                          = (known after apply)
+      + password_data                        = (known after apply)
+      + placement_group                      = (known after apply)
+      + placement_group_id                   = (known after apply)
+      + placement_partition_number           = (known after apply)
+      + primary_network_interface_id         = (known after apply)
+      + private_dns                          = (known after apply)
+      + private_ip                           = (known after apply)
+      + public_dns                           = (known after apply)
+      + public_ip                            = (known after apply)
+      + region                               = "ap-southeast-2"
+      + secondary_private_ips                = (known after apply)
+      + security_groups                      = (known after apply)
+      + source_dest_check                    = true
+      + spot_instance_request_id             = (known after apply)
+      + subnet_id                            = "subnet-0005a764fbd519fdf"
+      + tags                                 = {
+          + "Name" = "devops-task-staging"
+        }
+      + tags_all                             = {
+          + "Environment" = "staging"
+          + "ManagedBy"   = "Terraform"
+          + "Name"        = "devops-task-staging"
+          + "Project"     = "devops-observable-service"
+        }
+      + tenancy                              = (known after apply)
+      + user_data                            = <<-EOT
+            #!/usr/bin/env bash
+            set -euo pipefail
+            dnf install -y docker
+            systemctl enable --now docker amazon-ssm-agent
+            install -d -m 0755 /opt/devops
+            install -d -m 0700 /etc/devops
+            cat > /etc/devops/service.env <<'ENV'
+            AWS_REGION=ap-southeast-2
+            LOG_GROUP=/devops-task/staging/app
+            APP_ENVIRONMENT=staging
+            IMAGE_REPOSITORY=ghcr.io/sakibulhaque2002/devops-observable-service
+            ENV
+            chmod 0600 /etc/devops/service.env
+            printf '%s' 'IyEvdXNyL2Jpbi9lbnYgYmFzaAojIEluc3RhbGxlZCBvbiBFQzIgYnkgVGVycmFmb3JtLiBWYWxpZGF0ZSBhIGNhbmRpZGF0ZSwgc3dpdGNoLCBhbmQgcmVzdG9yZSBvbiBmYWlsdXJlLgpzZXQgLWV1byBwaXBlZmFpbAoKaWYgW1sgJCMgIT0gMSB8fCAhICQxID1+IF5naGNyXC5pby9bYS16MC05Ll8vLV0rKDpbYS16QS1aMC05Ll8tXSt8QHNoYTI1NjpbYS1mMC05XXs2NH0pJCBdXTsgdGhlbgogIGVjaG8gIlVzYWdlOiAkMCBnaGNyLmlvL293bmVyL2ltYWdlOjxpbW11dGFibGUtdGFnLW9yLWRpZ2VzdD4iID4mMgogIGV4aXQgMgpmaQppbWFnZT0kMQpleGVjIDk+IiR7REVQTE9ZX0xPQ0tfRklMRTotL3Zhci9sb2NrL2Rldm9wcy1kZXBsb3kubG9ja30iCmZsb2NrIC13IDMwMCA5CiMgUm9vdC1vd25lZCBmaWxlIGdlbmVyYXRlZCBmcm9tIG5vbi1zZWNyZXQgVGVycmFmb3JtIHNldHRpbmdzLgojIHNoZWxsY2hlY2sgc291cmNlPS9kZXYvbnVsbApzb3VyY2UgIiR7REVQTE9ZX0NPTkZJR19GSUxFOi0vZXRjL2Rldm9wcy9zZXJ2aWNlLmVudn0iCjogIiR7QVdTX1JFR0lPTjo/fSIgIiR7TE9HX0dST1VQOj99IiAiJHtBUFBfRU5WSVJPTk1FTlQ6P30iICIke0lNQUdFX1JFUE9TSVRPUlk6P30iCmlmIFtbICRpbWFnZSAhPSAiJElNQUdFX1JFUE9TSVRPUlkiOiogJiYgJGltYWdlICE9ICIkSU1BR0VfUkVQT1NJVE9SWSJAc2hhMjU2OiogXV07IHRoZW4KICBlY2hvICJJbWFnZSBtdXN0IGJlbG9uZyB0byB0aGUgY29uZmlndXJlZCBhcHBsaWNhdGlvbiByZXBvc2l0b3J5LiIgPiYyCiAgZXhpdCAyCmZpCgpydW5fY29udGFpbmVyKCkgewogIGxvY2FsIG5hbWU9JDEgcG9ydD0kMgogIGRvY2tlciBydW4gLWQgLS1uYW1lICIkbmFtZSIgLS1yZXN0YXJ0IHVubGVzcy1zdG9wcGVkIFwKICAgIC0tcmVhZC1vbmx5IC0tdG1wZnMgL3RtcDpydyxub2V4ZWMsbm9zdWlkLHNpemU9MTZtIFwKICAgIC0tY2FwLWRyb3AgQUxMIC0tc2VjdXJpdHktb3B0IG5vLW5ldy1wcml2aWxlZ2VzOnRydWUgXAogICAgLS1tZW1vcnkgMTI4bSAtLWNwdXMgMC41IC0tcGlkcy1saW1pdCA2NCAtLXN0b3AtdGltZW91dCAzMCBcCiAgICAtZSBQT1JUPTgwODAgLWUgRU5WSVJPTk1FTlQ9IiRBUFBfRU5WSVJPTk1FTlQiIC1lIExPR19MRVZFTD1JTkZPIFwKICAgIC0tbG9nLWRyaXZlciBhd3Nsb2dzIC0tbG9nLW9wdCBhd3Nsb2dzLXJlZ2lvbj0iJEFXU19SRUdJT04iIFwKICAgIC0tbG9nLW9wdCBhd3Nsb2dzLWdyb3VwPSIkTE9HX0dST1VQIiAtLWxvZy1vcHQgYXdzbG9ncy1zdHJlYW09IiRuYW1lIiBcCiAgICAtcCAiJHBvcnQ6ODA4MCIgIiRpbWFnZSIKfQoKd2FpdF9oZWFsdGh5KCkgewogIGxvY2FsIHVybD0kMQogIGZvciBfIGluIHsxLi4zMH07IGRvCiAgICBpZiBjdXJsIC0tZmFpbCAtLXNpbGVudCAtLW1heC10aW1lIDIgIiR1cmwiID4vZGV2L251bGw7IHRoZW4gcmV0dXJuIDA7IGZpCiAgICBzbGVlcCAyCiAgZG9uZQogIHJldHVybiAxCn0KCmRvY2tlciBwdWxsICIkaW1hZ2UiCmRvY2tlciBybSAtZiBhcHAtY2FuZGlkYXRlID4vZGV2L251bGwgMj4mMSB8fCB0cnVlCmlmICEgcnVuX2NvbnRhaW5lciBhcHAtY2FuZGlkYXRlIDEyNy4wLjAuMToxODA4MCB8fCBcCiAgICEgd2FpdF9oZWFsdGh5IGh0dHA6Ly8xMjcuMC4wLjE6MTgwODAvaGVhbHRoOyB0aGVuCiAgZG9ja2VyIGxvZ3MgYXBwLWNhbmRpZGF0ZSA+JjIgfHwgdHJ1ZQogIGRvY2tlciBybSAtZiBhcHAtY2FuZGlkYXRlID4vZGV2L251bGwgMj4mMSB8fCB0cnVlCiAgZWNobyAiQ2FuZGlkYXRlIGZhaWxlZDsgYWN0aXZlIHJlbGVhc2Ugd2FzIG5vdCBjaGFuZ2VkLiIgPiYyCiAgZXhpdCAxCmZpCmRvY2tlciBybSAtZiBhcHAtY2FuZGlkYXRlID4vZGV2L251bGwKCmRvY2tlciBybSAtZiBhcHAtcHJldmlvdXMgPi9kZXYvbnVsbCAyPiYxIHx8IHRydWUKaGFkX3ByZXZpb3VzPWZhbHNlCmlmIGRvY2tlciBjb250YWluZXIgaW5zcGVjdCBhcHAgPi9kZXYvbnVsbCAyPiYxOyB0aGVuCiAgZG9ja2VyIHN0b3AgLS10aW1lIDMwIGFwcCA+L2Rldi9udWxsCiAgZG9ja2VyIHJlbmFtZSBhcHAgYXBwLXByZXZpb3VzCiAgaGFkX3ByZXZpb3VzPXRydWUKZmkKCmlmIHJ1bl9jb250YWluZXIgYXBwIDgwODAgJiYgd2FpdF9oZWFsdGh5IGh0dHA6Ly8xMjcuMC4wLjE6ODA4MC9oZWFsdGg7IHRoZW4KICBlY2hvICJEZXBsb3llZCAkaW1hZ2U7IC9oZWFsdGggcGFzc2VkLiBQcmV2aW91cyBjb250YWluZXIgcmV0YWluZWQgZm9yIHJvbGxiYWNrLiIKICBleGl0IDAKZmkKCmVjaG8gIlNtb2tlIHRlc3QgZmFpbGVkOyByZXN0b3JpbmcgcHJldmlvdXMgcmVsZWFzZS4iID4mMgpkb2NrZXIgbG9ncyBhcHAgPiYyIHx8IHRydWUKZG9ja2VyIHJtIC1mIGFwcCA+L2Rldi9udWxsIDI+JjEgfHwgdHJ1ZQppZiAiJGhhZF9wcmV2aW91cyI7IHRoZW4KICBkb2NrZXIgcmVuYW1lIGFwcC1wcmV2aW91cyBhcHAKICBkb2NrZXIgc3RhcnQgYXBwID4vZGV2L251bGwKICBpZiAhIHdhaXRfaGVhbHRoeSBodHRwOi8vMTI3LjAuMC4xOjgwODAvaGVhbHRoOyB0aGVuCiAgICBlY2hvICJDUklUSUNBTDogcHJldmlvdXMgcmVsZWFzZSBhbHNvIGZhaWxlZCBpdHMgaGVhbHRoIGNoZWNrLiIgPiYyCiAgICBleGl0IDIKICBmaQogIGVjaG8gIlJvbGxiYWNrIGNvbXBsZXRlZDsgcHJldmlvdXMgcmVsZWFzZSBpcyBoZWFsdGh5LiIgPiYyCmVsc2UKICBlY2hvICJObyBwcmV2aW91cyByZWxlYXNlIGV4aXN0cyBvbiB0aGlzIGZpcnN0IGRlcGxveW1lbnQuIiA+JjIKZmkKZXhpdCAxCg==' | base64 -d > /opt/devops/deploy-container.sh
+            chmod 0755 /opt/devops/deploy-container.sh
+            dnf install -y openssh-server sudo
+            useradd --create-home --shell /bin/bash devops-deploy
+            install -d -m 0700 -o devops-deploy -g devops-deploy /home/devops-deploy/.ssh
+            cat > /home/devops-deploy/.ssh/authorized_keys <<'KEY'
+            restrict,command="/opt/devops/ssh-dispatch.sh" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJn8UrjbZLXlj11QqV27Y5Z5MeQ/f6vFTIBvY4CgwMQ4 devops-assessment-staging
+            KEY
+            chown devops-deploy:devops-deploy /home/devops-deploy/.ssh/authorized_keys
+            chmod 0600 /home/devops-deploy/.ssh/authorized_keys
+            printf '%s' 'IyEvdXNyL2Jpbi9lbnYgYmFzaAojIE9wZW5TU0ggZm9yY2VkIGNvbW1hbmQ6IGFjY2VwdCBhIGRpZ2VzdCBvbmx5LCBuZXZlciBldmFsdWF0ZSBhIHJlbW90ZSBzaGVsbCBjb21tYW5kLgpzZXQgLWV1byBwaXBlZmFpbAppbWFnZT0ke1NTSF9PUklHSU5BTF9DT01NQU5EOi19CmlmIFtbICEgJGltYWdlID1+IF5naGNyXC5pby9bYS16MC05Ll8vLV0rQHNoYTI1NjpbYS1mMC05XXs2NH0kIF1dOyB0aGVuCiAgZWNobyAiT25seSBhIGRpZ2VzdC1waW5uZWQgR0hDUiBhcHBsaWNhdGlvbiBkZXBsb3ltZW50IGlzIGFsbG93ZWQuIiA+JjIKICBleGl0IDIKZmkKZXhlYyBzdWRvIC1uIC9vcHQvZGV2b3BzL2RlcGxveS1jb250YWluZXIuc2ggIiRpbWFnZSIK' | base64 -d > /opt/devops/ssh-dispatch.sh
+            chmod 0755 /opt/devops/ssh-dispatch.sh
+            cat > /etc/sudoers.d/devops-deploy <<'SUDOERS'
+            devops-deploy ALL=(root) NOPASSWD: /opt/devops/deploy-container.sh
+            SUDOERS
+            chmod 0440 /etc/sudoers.d/devops-deploy
+            visudo -cf /etc/sudoers.d/devops-deploy
+            cat > /etc/ssh/sshd_config.d/00-devops-task.conf <<'SSHD'
+            PasswordAuthentication no
+            KbdInteractiveAuthentication no
+            PermitRootLogin no
+            AuthenticationMethods publickey
+            PermitUserEnvironment no
+            AllowUsers devops-deploy
+            AllowAgentForwarding no
+            AllowTcpForwarding no
+            X11Forwarding no
+            SSHD
+            sshd -t
+            systemctl enable --now sshd
+            systemctl restart sshd
+            cat > /etc/systemd/system/devops-bootstrap.service <<'UNIT'
+            [Unit]
+            Description=Initial application deployment
+            After=docker.service network-online.target
+            Wants=network-online.target
+            Requires=docker.service
+            [Service]
+            Type=oneshot
+            ExecStart=/opt/devops/deploy-container.sh ghcr.io/sakibulhaque2002/devops-observable-service@sha256:537a317940baae0e1a42de01e6d099758e05a51410896fb9d990a5cc237cb442
+            Restart=on-failure
+            RestartSec=30
+            RemainAfterExit=yes
+            [Install]
+            WantedBy=multi-user.target
+            UNIT
+            systemctl daemon-reload
+            systemctl enable --now devops-bootstrap.service
+        EOT
+      + user_data_base64                     = (known after apply)
+      + user_data_replace_on_change          = true
+      + vpc_security_group_ids               = (known after apply)
+
+      + capacity_reservation_specification (known after apply)
+
+      + cpu_options (known after apply)
+
+      + credit_specification {
+          + cpu_credits = "standard"
+        }
+
+      + ebs_block_device (known after apply)
+
+      + enclave_options (known after apply)
+
+      + ephemeral_block_device (known after apply)
+
+      + instance_market_options (known after apply)
+
+      + maintenance_options (known after apply)
+
+      + metadata_options {
+          + http_endpoint               = "enabled"
+          + http_protocol_ipv6          = "disabled"
+          + http_put_response_hop_limit = 1
+          + http_tokens                 = "required"
+          + instance_metadata_tags      = "disabled"
+        }
+
+      + network_interface (known after apply)
+
+      + primary_network_interface (known after apply)
+
+      + private_dns_name_options (known after apply)
+
+      + root_block_device {
+          + delete_on_termination = true
+          + device_name           = (known after apply)
+          + encrypted             = true
+          + iops                  = (known after apply)
+          + kms_key_id            = (known after apply)
+          + tags_all              = (known after apply)
+          + throughput            = (known after apply)
+          + volume_id             = (known after apply)
+          + volume_size           = 8
+          + volume_type           = "gp3"
+        }
+
+      + secondary_network_interface (known after apply)
+    }
+
+  # aws_security_group.app will be created
+  + resource "aws_security_group" "app" {
+      + arn                    = (known after apply)
+      + description            = "Application HTTP and forced-command SSH deployment"
+      + egress                 = (known after apply)
+      + id                     = (known after apply)
+      + ingress                = (known after apply)
+      + name                   = (known after apply)
+      + name_prefix            = "devops-task-staging-"
+      + owner_id               = (known after apply)
+      + region                 = "ap-southeast-2"
+      + revoke_rules_on_delete = false
+      + tags_all               = {
+          + "Environment" = "staging"
+          + "ManagedBy"   = "Terraform"
+          + "Project"     = "devops-observable-service"
+        }
+      + vpc_id                 = "vpc-026972a1539add726"
+    }
+
+  # aws_vpc_security_group_egress_rule.https will be created
+  + resource "aws_vpc_security_group_egress_rule" "https" {
+      + arn                    = (known after apply)
+      + cidr_ipv4              = "0.0.0.0/0"
+      + description            = "HTTPS to SSM, CloudWatch, registries and package repositories"
+      + from_port              = 443
+      + id                     = (known after apply)
+      + ip_protocol            = "tcp"
+      + region                 = "ap-southeast-2"
+      + security_group_id      = (known after apply)
+      + security_group_rule_id = (known after apply)
+      + tags_all               = {
+          + "Environment" = "staging"
+          + "ManagedBy"   = "Terraform"
+          + "Project"     = "devops-observable-service"
+        }
+      + to_port                = 443
+    }
+
+  # aws_vpc_security_group_ingress_rule.http will be created
+  + resource "aws_vpc_security_group_ingress_rule" "http" {
+      + arn                    = (known after apply)
+      + cidr_ipv4              = "CLIENT_IPV4/32"
+      + description            = "Assessment app from the configured client CIDR"
+      + from_port              = 8080
+      + id                     = (known after apply)
+      + ip_protocol            = "tcp"
+      + region                 = "ap-southeast-2"
+      + security_group_id      = (known after apply)
+      + security_group_rule_id = (known after apply)
+      + tags_all               = {
+          + "Environment" = "staging"
+          + "ManagedBy"   = "Terraform"
+          + "Project"     = "devops-observable-service"
+        }
+      + to_port                = 8080
+    }
+
+  # aws_vpc_security_group_ingress_rule.ssh[0] will be created
+  + resource "aws_vpc_security_group_ingress_rule" "ssh" {
+      + arn                    = (known after apply)
+      + cidr_ipv4              = "0.0.0.0/0"
+      + description            = "Dedicated forced-command deployment key; no interactive login"
+      + from_port              = 22
+      + id                     = (known after apply)
+      + ip_protocol            = "tcp"
+      + region                 = "ap-southeast-2"
+      + security_group_id      = (known after apply)
+      + security_group_rule_id = (known after apply)
+      + tags_all               = {
+          + "Environment" = "staging"
+          + "ManagedBy"   = "Terraform"
+          + "Project"     = "devops-observable-service"
+        }
+      + to_port                = 22
+    }
+
+Plan: 9 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  + application_url        = (known after apply)
+  + cloudwatch_log_group   = "/devops-task/staging/app"
+  + deployment_method      = "ssh"
+  + instance_id            = (known after apply)
+  + ssh_host               = (known after apply)
+
+─────────────────────────────────────────────────────────────────────────────
+
+Saved the plan to: staging.tfplan
+
+To perform exactly these actions, run the following command to apply:
+    terraform apply "staging.tfplan"
+Releasing state lock. This may take a few moments...

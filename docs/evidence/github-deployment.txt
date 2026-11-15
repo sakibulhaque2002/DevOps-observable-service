@@ -1,0 +1,21 @@
+Actual GitHub Actions to EC2 deployment — November 16, 2026 (Asia/Dhaka)
+Raw workflow timestamps are UTC.
+
+https://github.com/sakibulhaque2002/DevOps-observable-service/actions/runs/43756516444
+Source: 7f0dae92f98cbe127e81b98b0bef1848f7eb9916
+Application version: 1.0.0-build.5
+
+checks / Build, runtime smoke test and critical vulnerability gate: success
+checks / Dockerfile, Bash, Terraform and Kubernetes validation: success
+checks / Python lint, tests and coverage: success
+publish: success
+scan-release (arm64): success
+scan-release (amd64): success
+deploy-ssh: success
+deploy: skipped
+
+The repository owner approved the main-only assessment environment before the SSH job received its dedicated environment secret. The SSM job was intentionally skipped because this account uses the SSH alternative.
+
+2026-11-15T20:16:34.9253190Z Digest: sha256:4c9f2dec007106060a2468e0841bd3e0ef2c20cc3439d549ab9721238390cdf4
+2026-11-15T20:16:34.9275140Z Status: Downloaded newer image for ghcr.io/sakibulhaque2002/devops-observable-service@sha256:4c9f2dec007106060a2468e0841bd3e0ef2c20cc3439d549ab9721238390cdf4
+2026-11-15T20:16:48.7587917Z Deployed ghcr.io/sakibulhaque2002/devops-observable-service@sha256:4c9f2dec007106060a2468e0841bd3e0ef2c20cc3439d549ab9721238390cdf4; /health passed. Previous container retained for rollback.

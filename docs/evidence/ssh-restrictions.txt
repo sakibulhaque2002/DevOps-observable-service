@@ -1,0 +1,2 @@
+SSH restriction: id; exit=2; output=Only a digest-pinned GHCR application deployment is allowed.
+SSH restriction: ghcr.io/another-owner/app@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; exit=2; output=Image must belong to the configured application repository.

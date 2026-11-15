@@ -16,3 +16,12 @@ SIGTERM: Service stopped gracefully; container exited with code 0
 Final image Trivy CRITICAL findings: 0
 Actual AWS plan/apply/deploy/destroy evidence: pending account and authentication
 GitHub-hosted CI and multi-architecture release: passed; see github-release.txt. AWS deploy skipped.
+
+November 16, 2026 update (Asia/Dhaka):
+GitHub Actions run 43756516444: 26 tests passed; exact application coverage 94.69% (rounded to 95% in the terminal table).
+Both mocked Terraform security plans passed in CI: default SSM and optional SSH configuration.
+All Python, Dockerfile, Bash, Terraform and Kubernetes checks passed in the same run.
+The release published/scanned amd64 and arm64, then successfully deployed build.5 to EC2 after owner approval.
+See github-deployment.txt, ec2-runtime.txt, aws-apply.txt and aws-rollback.txt for actual cloud evidence.
+The earlier pending statements describe the November 14 snapshot only.
+AWS cleanup verified: 9 resources destroyed; disk/SG/IAM/log group absent; state empty; existing bucket retained. See aws-cleanup.txt and credential-cleanup.txt.

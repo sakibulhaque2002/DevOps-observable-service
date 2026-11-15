@@ -39,4 +39,8 @@ capabilities, no-new-privileges, and a localhost-only test port:
 
 This evidence proves hosted CI, publication, scanning, anonymous registry access,
 and a local smoke test of the published artifact. It does not prove AWS apply,
-SSM deployment, CloudWatch ingestion, or resource destruction; those remain pending.
+SSM deployment, CloudWatch ingestion, or resource destruction; those were pending at this November 14 snapshot.
+
+November 16 update: github-deployment.txt records the later successful protected
+GitHub Actions EC2 deployment. Additional files in this directory record the
+actual AWS plan/apply, CloudWatch logs, runtime checks and rollback exercise.
