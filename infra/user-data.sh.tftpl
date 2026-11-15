@@ -52,6 +52,7 @@ Wants=network-online.target
 Requires=docker.service
 [Service]
 Type=oneshot
+ExecCondition=/usr/bin/bash -c '! /usr/bin/docker container inspect app >/dev/null 2>&1'
 ExecStart=/opt/devops/deploy-container.sh ${image}
 Restart=on-failure
 RestartSec=30

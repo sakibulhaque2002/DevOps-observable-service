@@ -117,6 +117,7 @@ jobs:
     needs: [publish, scan-release]
     if: github.ref == 'refs/heads/main' && vars.DEPLOYMENT_METHOD == 'ssh' && vars.EC2_SSH_HOST != ''
     runs-on: ubuntu-24.04
+    environment: assessment
     timeout-minutes: 15
     permissions:
       contents: read
