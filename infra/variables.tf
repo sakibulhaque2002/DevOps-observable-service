@@ -55,3 +55,33 @@ variable "log_retention_days" {
   description = "CloudWatch application log retention."
   default     = 7
 }
+
+variable "deployment_method" {
+  description = "ssm uses GitHub OIDC; ssh supports accounts whose policies block IAM identity providers."
+  type        = string
+  default     = "ssm"
+  validation {
+    condition     = contains(["ssm", "ssh"], var.deployment_method)
+    error_message = "Use ssm or ssh."
+  }
+}
+
+variable "ssh_public_key" {
+  description = "Dedicated deployment public key; its private key is stored only as a GitHub Actions secret."
+  type        = string
+  default     = ""
+  validation {
+    condition     = var.deployment_method != "ssh" || can(regex("^ssh-ed25519 [A-Za-z0-9+/=]+( [A-Za-z0-9@._-]+)?$", var.ssh_public_key))
+    error_message = "SSH mode requires a single Ed25519 public key with an optional simple comment."
+  }
+}
+
+variable "ssh_allowed_cidr" {
+  description = "SSH source range. Dynamic GitHub-hosted runners require broad ingress; the key is forced-command-only."
+  type        = string
+  default     = "0.0.0.0/0"
+  validation {
+    condition     = can(cidrnetmask(var.ssh_allowed_cidr))
+    error_message = "Provide a valid IPv4 CIDR."
+  }
+}

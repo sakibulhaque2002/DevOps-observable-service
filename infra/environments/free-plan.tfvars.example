@@ -1,0 +1,11 @@
+# Project-based Google/Builder ID accounts may block IAM identity providers.
+environment       = "staging"
+aws_region        = "ap-southeast-2"
+instance_type     = "t3.micro"
+deployment_method = "ssh"
+allowed_http_cidr = "203.0.113.1/32" # Replace with your current public IPv4/32.
+app_image         = "ghcr.io/sakibulhaque2002/devops-observable-service@sha256:537a317940baae0e1a42de01e6d099758e05a51410896fb9d990a5cc237cb442"
+# Supply the PUBLIC key through TF_VAR_ssh_public_key or your ignored .tfvars.
+# Never supply a private key to Terraform.
+# Dynamic GitHub-hosted runners use changing source IPs; see the SSH security notes.
+ssh_allowed_cidr = "0.0.0.0/0"

@@ -59,7 +59,10 @@ def test_deployment_restores_previous_release(tmp_path, scenario, exit_code, ima
         )
     )
     config = tmp_path / "service.env"
-    config.write_text("AWS_REGION=us-east-1\nLOG_GROUP=test\nAPP_ENVIRONMENT=staging\n")
+    config.write_text(
+        "AWS_REGION=us-east-1\nLOG_GROUP=test\nAPP_ENVIRONMENT=staging\n"
+        "IMAGE_REPOSITORY=ghcr.io/example/app\n"
+    )
     for name in ["docker", "curl", "sleep"]:
         tool = tmp_path / name
         tool.write_text(FAKE_TOOL)
@@ -83,3 +86,28 @@ def test_deployment_restores_previous_release(tmp_path, scenario, exit_code, ima
     assert "app-candidate" not in final
     if scenario == "promote-fail":
         assert "Rollback completed" in result.stderr
+
+
+def test_deployment_rejects_another_image_repository(tmp_path):
+    config = tmp_path / "service.env"
+    config.write_text(
+        "AWS_REGION=us-east-1\nLOG_GROUP=test\nAPP_ENVIRONMENT=staging\n"
+        "IMAGE_REPOSITORY=ghcr.io/example/app\n"
+    )
+    docker = tmp_path / "docker"
+    docker.write_text("#!/bin/sh\nexit 77\n")
+    docker.chmod(0o755)
+    result = subprocess.run(
+        [str(SCRIPT), "ghcr.io/another-owner/app:untrusted"],
+        text=True,
+        capture_output=True,
+        check=False,
+        env={
+            **os.environ,
+            "PATH": f"{tmp_path}:{os.environ['PATH']}",
+            "DEPLOY_CONFIG_FILE": str(config),
+            "DEPLOY_LOCK_FILE": str(tmp_path / "deploy.lock"),
+        },
+    )
+    assert result.returncode == 2
+    assert "configured application repository" in result.stderr
