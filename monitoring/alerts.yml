@@ -10,14 +10,14 @@ groups:
           description: "Inspect container health and logs. A failed scrape can indicate app or network failure."
       - alert: HighApplicationErrorRate
         expr: |
-          (sum(rate(http_errors_total{job="app",status=~"5.."}[5m]))
-           / clamp_min(sum(rate(http_requests_total{job="app"}[5m])), 0.001) > 0.05)
-          and sum(increase(http_requests_total{job="app"}[5m])) >= 20
+          (sum(rate(http_errors_total{job="app",path!="/health",status=~"5.."}[5m]))
+           / clamp_min(sum(rate(http_requests_total{job="app",path!="/health"}[5m])), 0.001) > 0.05)
+          and sum(increase(http_requests_total{job="app",path!="/health"}[5m])) >= 20
         for: 2m
         labels: {severity: warning}
         annotations:
           summary: More than 5% of requests fail with 5xx
-          description: "At least 20 requests in five minutes are required. Correlate the Application logs panel with path/status metrics."
+          description: "At least 20 non-health requests in five minutes are required. Correlate the Application logs panel with path/status metrics."
       - alert: HostDiskAlmostFull
         expr: |
           (1 - node_filesystem_avail_bytes{job="node",fstype!~"tmpfs|overlay|squashfs"}

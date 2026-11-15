@@ -75,6 +75,8 @@ services:
     image: grafana/alloy:v1.22.0
     profiles: [monitoring]
     user: "0:0"
+    environment:
+      DOCKER_LOG_PROJECT_REGEX: ${DOCKER_LOG_PROJECT_REGEX:-.*}
     command: [run, --storage.path=/var/lib/alloy, /etc/alloy/config.alloy]
     volumes:
       - ./monitoring/config.alloy:/etc/alloy/config.alloy:ro

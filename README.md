@@ -17,6 +17,7 @@ A small Python/FastAPI service delivered through tested containers, GitHub Actio
 | Actual AWS plan/apply | [Saved plan](docs/evidence/aws-plan.txt) and [successful apply](docs/evidence/aws-apply.txt), Sydney, active Free plan |
 | EC2 health, logs and rollback | Real containers healthy; [CloudWatch logs](docs/evidence/cloudwatch-logs.txt); [failed-probe rollback passed](docs/evidence/aws-rollback.txt) |
 | AWS and credential cleanup | [All 9 test resources destroyed and absence verified](docs/evidence/aws-cleanup.txt); [deployment secret/key removed](docs/evidence/credential-cleanup.txt); existing S3 bucket retained |
+| Final submission hardening | [Verified S3 TLS-only policy, enforced PR checks, alert regressions and log discovery](docs/evidence/submission-hardening.txt) |
 
 See [the evidence index](docs/evidence/README.md). Mocked Terraform tests and deployment-script stand-ins are development checks; the separate cloud evidence records actual AWS operations.
 
@@ -40,7 +41,7 @@ flowchart LR
     Local[Local Compose app] -->|metrics| Prom[Prometheus\n7 days / 1 GB]
     Node[Node Exporter / host] -->|metrics| Prom
     Cad[cAdvisor / containers] -->|metrics| Prom
-    Containers[All containers in this Compose project] -->|Docker discovery / logs| Alloy[Grafana Alloy]
+    Containers[All Docker containers by default] -->|Docker discovery / logs| Alloy[Grafana Alloy]
     Alloy --> Loki[Loki\n7-day retention]
     Prom --> Grafana[Grafana\nprovisioned dashboards]
     Loki --> Grafana
@@ -103,6 +104,10 @@ Open [Grafana](http://localhost:3000), sign in using `GRAFANA_ADMIN_USER` and `G
 
 Wait for at least two 15-second scrapes before expecting rate charts. Create requests with `curl` to populate application series. Histograms report bucket-based estimates, including sub-5ms requests in the first bucket.
 
+Request-rate, error-rate and latency panels exclude `/health`, so background probes do not dilute user-facing failures. The error alert's minimum request count also excludes probes.
+
+Alloy discovers **all Docker containers by default**, including containers without Compose labels. Containers without Compose labels use `service="docker"` and `project="standalone"`; container names distinguish their streams. The Application logs panel selects this assessment's project and service so unrelated applications cannot mix into its view. On a shared workstation, optionally set `DOCKER_LOG_PROJECT_REGEX=devops-observable` in `.env` to collect only this project. Leave the default `.*` for the assignment's host-wide collection. The local verification environment uses the narrower override to avoid collecting unrelated projects' logs.
+
 Only the application (localhost:8080) and Grafana (localhost:3000) publish ports. None of the monitoring backends or collectors publish a host port. Their traffic uses the `internal: true` observability network; the app and Grafana additionally join a frontend network so localhost port publishing works.
 
 ```bash
@@ -111,6 +116,9 @@ docker compose exec app python -c 'import urllib.request; print(urllib.request.u
 # Check rules and configuration:
 docker compose exec prometheus promtool check config /etc/prometheus/prometheus.yml
 docker compose exec prometheus promtool check rules /etc/prometheus/alerts.yml
+# Regression tests: health probes cannot hide errors or inflate the traffic gate.
+docker run --rm --entrypoint promtool -v "$PWD/monitoring:/work:ro" \
+  prom/prometheus:v3.16.0 test rules /work/tests/alerts.test.yml
 # View app JSON logs:
 docker compose logs --tail=20 app
 # Stop, retaining collected data:
@@ -123,6 +131,8 @@ Named volumes retain monitoring data. `docker compose --profile monitoring down 
 
 These screenshots show actual local data. The error spike comes from the explicitly enabled demo endpoint.
 
+They were captured on November 14. The final query refinement excludes health probes from error percentages and scopes the logs panel by project; the original screenshots remain historical evidence. See [the final validation record](docs/evidence/submission-hardening.txt).
+
 ![Application dashboard with error metrics and logs](docs/evidence/dashboard-application.png)
 ![Host dashboard](docs/evidence/dashboard-host.png)
 ![Containers dashboard](docs/evidence/dashboard-containers.png)
@@ -130,7 +140,7 @@ These screenshots show actual local data. The error spike comes from the explici
 ### Investigate an error spike
 
 1. On Application, select the time range containing the spike. Compare request rate and latency to determine whether increased load coincides with failures.
-2. Open the adjacent logs panel in Explore and query `{service="app",level="error"} | json | status >= 500`. Narrow by route with `| path="/demo/error"`. The JSON `version` field helps associate errors with a release.
+2. Open the adjacent logs panel in Explore and query `{project="devops-observable",service="app",level="error"} | json | status >= 500`. Narrow by route with `| path="/demo/error"`. The JSON `version` field helps associate errors with a release.
 3. On Containers, inspect the app's CPU and working-set memory relative to its 128 MiB limit. Check for restarts using `docker compose ps` and `docker inspect`.
 4. On Host, check CPU, available memory, disk usage, and network activity. If infrastructure is healthy and the spike started at a deployment, inspect the release and roll it back if needed.
 5. For the screenshot demo, logs identify the intentional `/demo/error` failures. Disable the demo again after collecting evidence.
@@ -159,7 +169,7 @@ Rules live in [monitoring/alerts.yml](monitoring/alerts.yml). Grafana's Promethe
 | Alert | Threshold and `for` duration | Reasoning |
 |---|---|---|
 | ApplicationDown | `up == 0` for 1 minute | Several failed scrapes filter a brief restart but detect sustained app/network failure quickly. |
-| HighApplicationErrorRate | 5xx >5%, at least 20 requests/5m, for 2 minutes | Avoid a single low-volume failure paging someone; require sustained user-visible errors. |
+| HighApplicationErrorRate | Non-health 5xx >5%, at least 20 non-health requests/5m, for 2 minutes | Exclude probes, avoid a single low-volume failure paging someone, and require sustained user-visible errors. |
 | HostDiskAlmostFull | >80% used for 5 minutes, writable filesystems | Leave cleanup headroom and ignore short writes and read-only media. |
 | ContainerMemoryNearLimit | Working set >90% of a finite nonzero limit for 3 minutes | Warn before OOM while avoiding transient spikes and unlimited-container divisions. |
 
@@ -217,6 +227,8 @@ In SSM mode, no manually supplied GitHub secret is needed: the built-in `GITHUB_
 
 Use a feature branch and a PR for changes; require the three CI jobs before merging. In SSM mode, the deploy role trusts exactly this repository's `main` ref and `sts.amazonaws.com` audience. If you add a GitHub deployment Environment, update the OIDC subject because environment-based subjects have a different format.
 
+This repository protects `main`: a pull request, an up-to-date branch, all three CI checks from GitHub Actions, and resolved conversations are required, including for administrators. Force pushes and branch deletion are blocked. A second-person review is not required for this solo assessment; production should require independent approval. Forks must configure their own branch protection.
+
 The first successful release is `1.0.0-build.1`, source commit `7a27025c592e656fa73d2bdac7a4dccd038904bb`. Its exact manifest digest is:
 
 ```text
@@ -259,6 +271,8 @@ terraform -chdir=infra/bootstrap apply bootstrap.tfplan
 ```
 
 The small bootstrap configuration uses local state to solve the bucket-creation dependency. Preserve its ignored state securely until cleanup. The application infrastructure uses remote S3 state and native S3 locking. S3 locking is enabled with `use_lockfile=true`; a separate DynamoDB table is unnecessary. [HashiCorp backend documentation](https://developer.hashicorp.com/terraform/language/backend/s3)
+
+The assessment reused an existing state bucket instead of creating one through this bootstrap module. Its encryption, versioning and public-access blocking were verified. Final review added the previously missing bucket-policy deny for `aws:SecureTransport=false` and verified Terraform could still read the empty application state. This matches the TLS protection already declared in the bootstrap code; the shared bucket remains outside the application's destroy lifecycle.
 
 ### 2. Configure and review the application plan
 
@@ -453,7 +467,7 @@ The timer runs every five minutes with a small random delay. `SuccessExitStatus=
 - **Alpine and multi-stage wheels:** a digest-pinned Python image has a small runtime and supports a Python-based HEALTHCHECK without adding curl. BuildKit mounts built wheels during installation, so the runtime image does not retain wheel archives. Native dependencies must have compatible musl wheels; the build fails rather than silently installing unpinned compilers.
 - **EC2 plus separate local Kubernetes:** EC2 directly demonstrates the requested bootstrap, IAM, SSM, logging, and rollback responsibilities at a small cost. ECS could reduce host maintenance; EKS suits a broader Kubernetes platform but adds control-plane cost and complexity that the assessment does not need.
 - **Tags and secrets:** SHA tags identify source, SemVer tags aid review, and digest deployment identifies exact content. GitHub OIDC (SSM mode), the restricted deployment key (SSH mode), and the EC2 instance role avoid static AWS access keys. Local secrets stay in ignored `.env`; Kubernetes secrets are generated at runtime.
-- **Metric/log cardinality:** metrics use route templates and collapse unknown URLs into `__unmatched__`; uncommon HTTP methods become `OTHER`. Loki indexes bounded service/container identity and log level. Path, status, timestamp, and version stay as JSON fields for query-time filtering; IDs, arbitrary URLs, and tokens never become labels.
+- **Metric/log cardinality:** metrics use route templates and collapse unknown URLs into `__unmatched__`; uncommon HTTP methods become `OTHER`. Loki indexes project, service/container identity and log level, with cardinality tied to deployed containers rather than individual requests. Path, status, timestamp, and version stay as JSON fields for query-time filtering; request IDs, arbitrary URLs, and tokens never become labels.
 - **Local retention/storage:** named volumes and filesystem Loki make the demo reproducible. Production needs durable object storage, capacity planning, authentication, backups, and alert delivery.
 
 The final local amd64 image reports **20,666,449 bytes (20.67 MB / 19.71 MiB)** with `docker image inspect devops-observable-service:1.0.0 --format '{{.Size}}'`. This Docker Engine measurement is architecture/engine-specific and should not be confused with a registry's compressed transfer size.
@@ -464,7 +478,7 @@ The app runs without root, writable root storage, extra Linux capabilities, or a
 
 Node Exporter mounts `/proc`, `/sys`, and `/` read-only and joins the host PID namespace to observe host resources. `/proc/1/net` is additionally mounted at its procfs network view, with netlink collection disabled, so it reads **host** network counters while remaining on the internal Docker network. cAdvisor uses read-only host-root, `/sys`, Docker runtime/socket and data mounts, the host cgroup namespace, and privileged mode for host/container accounting. This broad host access is isolated to the monitoring collector; the application has no equivalent grants.
 
-Alloy runs as root to read the Docker socket, mounted read-only, and discovers every container **in this Compose project**. A read-only socket mount still allows powerful Docker API calls: it is not an API authorization boundary. Production should use a restricted socket proxy or another collection mechanism. Project-scoped discovery avoids ingesting unrelated applications' logs on a shared developer machine. No collector is exposed on a host port.
+Alloy runs as root to read the Docker socket, mounted read-only, and discovers **all Docker containers** by default. A read-only socket mount still allows powerful Docker API calls: it is not an API authorization boundary. Production should use a restricted socket proxy or another collection mechanism. The optional `DOCKER_LOG_PROJECT_REGEX` filter limits collection on shared developer machines; the default `.*` includes containers with no Compose labels. No collector is exposed on a host port.
 
 Image/runtime versions and Actions revisions are pinned; Trivy gates CRITICAL findings and Dependabot proposes updates. The instance role scopes CloudWatch permissions to its log group; in SSM mode the deployment role targets one EC2 instance. In SSH mode the dedicated key is limited to invoking the same deployment script for the configured image repository. S3 state is encrypted, versioned, locked, TLS-only, and blocked from public access. Terraform state remains sensitive; never commit it or supply credentials through backend files. The default AWS VPC and a single public instance are assessment simplifications.
 
@@ -486,3 +500,7 @@ Pricing references checked November 14, 2026: [EC2 example rates](https://docs.a
 ## What I would improve with more time
 
 Add a reverse proxy/load balancer for uninterrupted EC2 traffic, independent environment deployment approvals, Cosign signing and verification, an Alertmanager receiver, service-level objectives and burn-rate alerts, network policy and disruption budgets, a durable production monitoring deployment, automated recovery exercises, and workload-based resource tuning. Replace default-VPC assumptions with a reusable network module when the target environment warrants it.
+
+## AI assistance
+
+I used OpenAI Codex to assist with development, troubleshooting, and documentation. The implementation was validated through tests and recorded local and AWS deployment checks.

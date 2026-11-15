@@ -50,6 +50,15 @@ jobs:
           docker run --rm -i hadolint/hadolint:v2.14.0 < Dockerfile
           shellcheck scripts/*.sh
           GRAFANA_ADMIN_PASSWORD=ci-validation-only docker compose --profile monitoring config --quiet
+      - name: Validate monitoring configuration and regression-test alert behavior
+        run: |
+          docker run --rm --entrypoint promtool -v "$PWD/monitoring:/work:ro" \
+            prom/prometheus:v3.16.0 check rules /work/alerts.yml
+          docker run --rm --entrypoint promtool -v "$PWD/monitoring:/work:ro" \
+            prom/prometheus:v3.16.0 test rules /work/tests/alerts.test.yml
+          docker run --rm -e 'DOCKER_LOG_PROJECT_REGEX=.*' \
+            -v "$PWD/monitoring/config.alloy:/etc/alloy/config.alloy:ro" \
+            grafana/alloy:v1.22.0 validate /etc/alloy/config.alloy
       - name: Install checksum-verified Terraform
         env:
           TF_VERSION: "1.17.2"

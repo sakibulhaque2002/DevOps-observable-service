@@ -55,9 +55,11 @@ dashboards = {
             "Server error rate (%)",
             [
                 (
-                    '100 * (sum(rate(http_errors_total{job="app",status=~"5.."}[1m])) '
+                    '100 * (sum(rate(http_errors_total{job="app",path!="/health",'
+                    'status=~"5.."}[1m])) '
                     "or vector(0)) "
-                    '/ clamp_min(sum(rate(http_requests_total{job="app"}[1m])), 0.001)',
+                    '/ clamp_min(sum(rate(http_requests_total{job="app",'
+                    'path!="/health"}[1m])), 0.001)',
                     "5xx %",
                 ),
             ],
@@ -82,7 +84,7 @@ dashboards = {
         panel(
             "Application logs — filter JSON fields in Explore",
             [
-                ('{service="app"} | json', ""),
+                ('{project="devops-observable",service="app"} | json', ""),
             ],
             12,
             9,

@@ -69,7 +69,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "100 * (sum(rate(http_errors_total{job=\"app\",status=~\"5..\"}[1m])) or vector(0)) / clamp_min(sum(rate(http_requests_total{job=\"app\"}[1m])), 0.001)",
+          "expr": "100 * (sum(rate(http_errors_total{job=\"app\",path!=\"/health\",status=~\"5..\"}[1m])) or vector(0)) / clamp_min(sum(rate(http_requests_total{job=\"app\",path!=\"/health\"}[1m])), 0.001)",
           "legendFormat": "5xx %",
           "datasource": {
             "type": "prometheus",
@@ -167,7 +167,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "{service=\"app\"} | json",
+          "expr": "{project=\"devops-observable\",service=\"app\"} | json",
           "legendFormat": "",
           "datasource": {
             "type": "loki",
