@@ -209,7 +209,7 @@ Under **Repository → Settings → Secrets and variables → Actions → Variab
 | `EC2_SSH_HOST` | Terraform `ssh_host` output; SSH mode |
 | `EC2_SSH_KNOWN_HOSTS` | Trusted host-key line obtained through an authenticated AWS/SSM channel; SSH mode |
 
-In SSM mode, no manually supplied GitHub secret is needed: the built-in `GITHUB_TOKEN` publishes images, and GitHub OIDC obtains short-lived AWS credentials. SSH mode needs the `EC2_SSH_PRIVATE_KEY` repository secret containing its dedicated deployment key; it uses no AWS access keys. Deployment jobs skip until their corresponding target variables are set, allowing initial image publication before AWS exists. A skip is not successful AWS deployment evidence.
+In SSM mode, no manually supplied GitHub secret is needed: the built-in `GITHUB_TOKEN` publishes images, and GitHub OIDC obtains short-lived AWS credentials. SSH mode needs the `EC2_SSH_PRIVATE_KEY` environment secret in the `assessment` GitHub environment containing its dedicated deployment key; it uses no AWS access keys. Restrict that environment to `main` and require owner review before deployment. Environment secrets are released only after its protection checks pass. Deployment jobs skip until their corresponding target variables are set, allowing initial image publication before AWS exists. A skip is not successful AWS deployment evidence.
 
 **This project's first published GHCR image was verified accessible anonymously.** EC2 pulls anonymously, so verify public package visibility again if you fork or recreate the project. A public GitHub repository does not by itself guarantee package visibility. If needed, change visibility under the package's settings, then confirm `docker pull ghcr.io/sakibulhaque2002/devops-observable-service:sha-<SHA>` works without credentials before applying Terraform. Subsequent releases can then deploy automatically.
 
@@ -280,7 +280,7 @@ curl --fail http://YOUR_INSTANCE_PUBLIC_IP:8080/health
 aws logs tail /devops-task/staging/app --since 10m
 ```
 
-Amazon Linux bootstrap installs Docker, enables SSM, writes the root-owned deployment script, and starts a retrying systemd bootstrap service. The instance IAM role can publish only to the application's log group. SSM channel actions need wildcard resources because those operations do not support instance-level resource scoping; the GitHub role can send commands only to the exact target instance and AWS's RunShellScript document. GHCR is public, so no registry pull credentials or ECR permissions are needed on the instance.
+Amazon Linux bootstrap installs Docker, enables SSM, writes the root-owned deployment script, and starts a retrying systemd bootstrap service. Its condition skips initial deployment when an app container already exists, so a bootstrap restart or reboot does not replace a later release with the original bootstrap image. The instance IAM role can publish only to the application's log group. SSM channel actions need wildcard resources because those operations do not support instance-level resource scoping; the GitHub role can send commands only to the exact target instance and AWS's RunShellScript document. GHCR is public, so no registry pull credentials or ECR permissions are needed on the instance.
 
 ### 3. Exercise GitHub deployment
 
@@ -331,7 +331,7 @@ cp infra/environments/free-plan.tfvars.example infra/environments/staging.tfvars
 terraform -chdir=infra plan -var-file=environments/staging.tfvars -out=staging.tfplan
 ```
 
-Only the **public** key enters Terraform and user data. The ignored private key is uploaded through GitHub's repository-secret interface as `EC2_SSH_PRIVATE_KEY`; never place it in `.tfvars`, state inputs, source control, or chat. Generate a fresh key if a file of that name already exists rather than overwriting an unrelated key.
+Only the **public** key enters Terraform and user data. The ignored private key is uploaded as the `EC2_SSH_PRIVATE_KEY` environment secret under the `assessment` GitHub environment; never place it in `.tfvars`, state inputs, source control, or chat. Configure the environment for the selected branch `main` and require the repository owner to review deployments. The SSH job references that environment and receives its secret only after approval. An approved workflow can still read the key, so use the dedicated forced-command key for the test window and remove it afterward. Generate a fresh key if a file of that name already exists rather than overwriting an unrelated key.
 
 Before enabling the deployment job, obtain the instance's Ed25519 host public key through authenticated SSM (for example, an AWS-RunShellScript command that reads `/etc/ssh/ssh_host_ed25519_key.pub`). Store the complete `HOST ssh-ed25519 BASE64` line in `EC2_SSH_KNOWN_HOSTS`. The workflow enforces strict host-key checking; an unauthenticated `ssh-keyscan` alone is not a trust anchor. Set `EC2_SSH_HOST` and the secret first, then `DEPLOYMENT_METHOD=ssh` last.
 
