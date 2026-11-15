@@ -8,10 +8,42 @@ cat > /etc/devops/service.env <<'ENV'
 AWS_REGION=${region}
 LOG_GROUP=${log_group}
 APP_ENVIRONMENT=${environment}
+IMAGE_REPOSITORY=${image_repository}
 ENV
 chmod 0600 /etc/devops/service.env
 printf '%s' '${deploy_script}' | base64 -d > /opt/devops/deploy-container.sh
 chmod 0755 /opt/devops/deploy-container.sh
+%{ if ssh_enabled ~}
+dnf install -y openssh-server sudo
+useradd --create-home --shell /bin/bash devops-deploy
+install -d -m 0700 -o devops-deploy -g devops-deploy /home/devops-deploy/.ssh
+cat > /home/devops-deploy/.ssh/authorized_keys <<'KEY'
+restrict,command="/opt/devops/ssh-dispatch.sh" ${ssh_public_key}
+KEY
+chown devops-deploy:devops-deploy /home/devops-deploy/.ssh/authorized_keys
+chmod 0600 /home/devops-deploy/.ssh/authorized_keys
+printf '%s' '${ssh_dispatch}' | base64 -d > /opt/devops/ssh-dispatch.sh
+chmod 0755 /opt/devops/ssh-dispatch.sh
+cat > /etc/sudoers.d/devops-deploy <<'SUDOERS'
+devops-deploy ALL=(root) NOPASSWD: /opt/devops/deploy-container.sh
+SUDOERS
+chmod 0440 /etc/sudoers.d/devops-deploy
+visudo -cf /etc/sudoers.d/devops-deploy
+cat > /etc/ssh/sshd_config.d/00-devops-task.conf <<'SSHD'
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitRootLogin no
+AuthenticationMethods publickey
+PermitUserEnvironment no
+AllowUsers devops-deploy
+AllowAgentForwarding no
+AllowTcpForwarding no
+X11Forwarding no
+SSHD
+sshd -t
+systemctl enable --now sshd
+systemctl restart sshd
+%{ endif ~}
 cat > /etc/systemd/system/devops-bootstrap.service <<'UNIT'
 [Unit]
 Description=Initial application deployment

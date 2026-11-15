@@ -6,11 +6,11 @@ A small Python/FastAPI service delivered through tested containers, GitHub Actio
 
 | Requirement | Evidence / current status |
 |---|---|
-| Python endpoints, configuration and startup | 19 tests pass; application coverage 94.69%; CI requires at least 90% |
+| Python endpoints, configuration and startup | 26 tests pass; application coverage 94.69%; CI requires at least 90% |
 | Docker hardening and health check | Built and run locally as UID/GID 10001 with a read-only root filesystem |
 | Critical vulnerability gate | Local Trivy scan passed with zero CRITICAL vulnerabilities; repeated in CI |
 | Monitoring and dashboards | All scrape targets up; app logs in Loki; screenshots below |
-| Terraform | Both configurations validate; offline mocked security plan passes |
+| Terraform | Both configurations validate; two offline mocked security plans pass |
 | Kubernetes | Two replicas running; HPA receives CPU metrics; real update and rollback completed |
 | Zero-downtime demonstration | 320 in-cluster requests, 0 failures, both 1.0.0 and 1.0.1 observed |
 | GitHub Actions release | [PR CI passed](https://github.com/sakibulhaque2002/DevOps-observable-service/actions/runs/43510692334); [multi-architecture release and both scans passed](https://github.com/sakibulhaque2002/DevOps-observable-service/actions/runs/43511047185) |
@@ -29,6 +29,8 @@ flowchart LR
     ReleaseScan --> OIDC[GitHub OIDC\ntemporary AWS credentials]
     OIDC --> SSM[SSM Run Command\ncandidate + health check + rollback]
     SSM --> EC2[EC2 app container]
+    ReleaseScan --> SSH[Optional forced-command SSH\nproject-based Free account]
+    SSH --> EC2
     TF[Terraform + S3 locked state] --> EC2
     TF --> IAM[Instance IAM role + log group + security group]
     EC2 --> CW[CloudWatch Logs\n7-day retention]
@@ -196,19 +198,22 @@ uv export --frozen --no-dev --no-hashes --no-emit-project --output-file requirem
 
 Every release gets `sha-<full-commit-SHA>` and a unique valid semantic version such as `1.0.0-build.12`. `1.0.0` is the application baseline; `build.12` is a prerelease identifier generated from the workflow run number. EC2 deployment uses the manifest digest, not a mutable `latest` tag. Re-running the same workflow can rebuild the same tags; use its recorded digest for precise rollback.
 
-Under **Repository → Settings → Secrets and variables → Actions → Variables**, configure after Terraform apply:
+Under **Repository → Settings → Secrets and variables → Actions → Variables**, configure after Terraform apply. The default method is `ssm`; the project-based Free account can use `ssh`:
 
 | Repository variable | Value |
 |---|---|
 | `AWS_REGION` | `us-east-1` |
-| `AWS_ROLE_ARN` | Terraform `github_deploy_role_arn` output |
-| `EC2_INSTANCE_ID` | Terraform `instance_id` output |
+| `AWS_ROLE_ARN` | Terraform `github_deploy_role_arn` output; SSM mode only |
+| `EC2_INSTANCE_ID` | Terraform `instance_id` output; SSM mode |
+| `DEPLOYMENT_METHOD` | `ssm` (default if unset) or `ssh` |
+| `EC2_SSH_HOST` | Terraform `ssh_host` output; SSH mode |
+| `EC2_SSH_KNOWN_HOSTS` | Trusted host-key line obtained through an authenticated AWS/SSM channel; SSH mode |
 
-No manually supplied GitHub secret is needed: the built-in `GITHUB_TOKEN` publishes images, and GitHub OIDC obtains short-lived AWS credentials. The deploy job deliberately skips while the role/instance variables are unset, allowing initial image publication before AWS exists. That skip is not successful AWS deployment evidence.
+In SSM mode, no manually supplied GitHub secret is needed: the built-in `GITHUB_TOKEN` publishes images, and GitHub OIDC obtains short-lived AWS credentials. SSH mode needs the `EC2_SSH_PRIVATE_KEY` repository secret containing its dedicated deployment key; it uses no AWS access keys. Deployment jobs skip until their corresponding target variables are set, allowing initial image publication before AWS exists. A skip is not successful AWS deployment evidence.
 
 **This project's first published GHCR image was verified accessible anonymously.** EC2 pulls anonymously, so verify public package visibility again if you fork or recreate the project. A public GitHub repository does not by itself guarantee package visibility. If needed, change visibility under the package's settings, then confirm `docker pull ghcr.io/sakibulhaque2002/devops-observable-service:sha-<SHA>` works without credentials before applying Terraform. Subsequent releases can then deploy automatically.
 
-Use a feature branch and a PR for changes; require the three CI jobs before merging. The deploy role trusts exactly this repository's `main` ref and `sts.amazonaws.com` audience. If you add a GitHub deployment Environment, update the OIDC subject because environment-based subjects have a different format.
+Use a feature branch and a PR for changes; require the three CI jobs before merging. In SSM mode, the deploy role trusts exactly this repository's `main` ref and `sts.amazonaws.com` audience. If you add a GitHub deployment Environment, update the OIDC subject because environment-based subjects have a different format.
 
 The first successful release is `1.0.0-build.1`, source commit `7a27025c592e656fa73d2bdac7a4dccd038904bb`. Its exact manifest digest is:
 
@@ -222,7 +227,7 @@ Both platforms were scanned before release completion. The `unknown/unknown` man
 
 The assessment testing budget is **$0 out of pocket**. Verify an active eligible AWS Free plan and available credits before creating resources; do not upgrade plans or enable services outside that plan for this assessment. Cloud execution is pending. The production estimate below describes ongoing list-price operation without credits, not money you must invest to complete the local project. [AWS Free plan terms](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/free-tier-plans.html)
 
-The assessment target is one small EC2 instance in the default VPC. Terraform creates an encrypted gp3 disk, IMDSv2 enforcement, one application ingress rule, HTTPS egress, scoped IAM roles, a seven-day CloudWatch log group, and bootstrap/deployment automation. There is no SSH ingress, key pair, NAT gateway, EKS cluster, or static AWS access key. T3 CPU credits use Standard mode to avoid surplus-credit charges.
+The assessment target is one small EC2 instance in the default VPC. Terraform creates an encrypted gp3 disk, IMDSv2 enforcement, one application ingress rule, HTTPS egress, scoped IAM roles, a seven-day CloudWatch log group, and bootstrap/deployment automation. The default SSM mode has no SSH ingress or deployment key. Optional SSH mode opens port 22 for its dedicated forced-command key. Neither mode creates a NAT gateway, EKS cluster, or static AWS access key. T3 CPU credits use Standard mode to avoid surplus-credit charges.
 
 Use a non-root administrative identity to provision infrastructure. Authenticate through the AWS CLI's browser login or another temporary-credential method. Do not create root access keys. The initial operator needs permissions to create the Terraform-managed resources; the application and GitHub deployment roles have narrower permissions.
 
@@ -279,7 +284,7 @@ Amazon Linux bootstrap installs Docker, enables SSM, writes the root-owned deplo
 
 ### 3. Exercise GitHub deployment
 
-Set the repository variables listed above. Re-run **Release and deploy** using workflow dispatch on `main`, then save a link or sanitized screenshot of its successful SSM deployment step in `docs/evidence`. The smoke test runs on EC2 through SSM against localhost, so GitHub-hosted runner IPs do not need inbound security-group access.
+Set the repository variables listed above. Re-run **Release and deploy** using workflow dispatch on `main`, then save a link or sanitized screenshot of the successful deployment step in `docs/evidence`. The smoke test runs on EC2 against localhost. SSM mode needs no inbound administration port; SSH mode uses its separately documented port-22 rule and pinned host key.
 
 To provision production with the same code, use `production.tfvars.example`, a **separate backend key** `production/terraform.tfstate`, and a separate working checkout or reinitialize to the production backend. Check the active backend before every plan. If staging created the account-wide GitHub OIDC provider, production must set `create_github_oidc_provider=false`. Keep the provider until all dependent environments are destroyed. A real multi-environment pipeline should use separate environment-specific deployment roles and approvals.
 
@@ -306,7 +311,35 @@ For a manual EC2 rollback, dispatch a recorded previous digest through the same 
 sudo /opt/devops/deploy-container.sh ghcr.io/sakibulhaque2002/devops-observable-service@sha256:PREVIOUS_MANIFEST_DIGEST
 ```
 
-The workflow calls the root-owned script installed by Terraform. Changing that script requires reapplying Terraform; `user_data_replace_on_change=true` replaces the assessment instance so bootstrap and reviewed source remain aligned. The workflow never executes pull-request code with AWS credentials.
+Both deployment methods call the same root-owned script installed by Terraform. The script also rejects images outside the configured application repository. Changing that script requires reapplying Terraform; `user_data_replace_on_change=true` replaces the assessment instance so bootstrap and reviewed source remain aligned. The workflow never executes pull-request code with AWS credentials.
+
+### Project-based Free account: SSH alternative
+
+The Google/Builder ID project account used for this assessment is assigned to Sydney (`ap-southeast-2`). AWS API checks confirmed an active Free plan and $100 in credits. Its AWS-managed service control policy explicitly denied `iam:ListOpenIDConnectProviders`. AWS documents restrictions on IAM provider operations in this account experience. Granting another IAM Allow policy cannot override an explicit SCP Deny. [AWS managed project policies](https://docs.aws.amazon.com/accounts/latest/reference/scps-and-rcps-for-projects.html)
+
+The assessment permits SSM or SSH, so `deployment_method="ssh"` keeps the Free plan and avoids IAM identity-provider resources. The default OIDC/SSM implementation remains available for accounts that support it. No plan upgrade or change to AWS-managed policies is required. The existing EC2 instance role still supports CloudWatch logging and authenticated operator access through SSM.
+
+For this mode:
+
+```bash
+mkdir -p .tools/ssh
+chmod 700 .tools/ssh
+ssh-keygen -t ed25519 -N '' -C devops-assessment-staging -f .tools/ssh/deploy
+export TF_VAR_ssh_public_key="$(cat .tools/ssh/deploy.pub)"
+cp infra/environments/free-plan.tfvars.example infra/environments/staging.tfvars
+# Edit allowed_http_cidr to your public IPv4/32 and configure backend.hcl for your bucket.
+terraform -chdir=infra plan -var-file=environments/staging.tfvars -out=staging.tfplan
+```
+
+Only the **public** key enters Terraform and user data. The ignored private key is uploaded through GitHub's repository-secret interface as `EC2_SSH_PRIVATE_KEY`; never place it in `.tfvars`, state inputs, source control, or chat. Generate a fresh key if a file of that name already exists rather than overwriting an unrelated key.
+
+Before enabling the deployment job, obtain the instance's Ed25519 host public key through authenticated SSM (for example, an AWS-RunShellScript command that reads `/etc/ssh/ssh_host_ed25519_key.pub`). Store the complete `HOST ssh-ed25519 BASE64` line in `EC2_SSH_KNOWN_HOSTS`. The workflow enforces strict host-key checking; an unauthenticated `ssh-keyscan` alone is not a trust anchor. Set `EC2_SSH_HOST` and the secret first, then `DEPLOYMENT_METHOD=ssh` last.
+
+SSH uses a dedicated `devops-deploy` account. Its authorized key has `restrict` and a forced dispatch command: no interactive shell, forwarding, agent forwarding, or arbitrary remote commands. Password and root SSH logins are disabled. The dispatch accepts only a digest-pinned image, and the root deployment script enforces the configured application repository before any Docker operation. Sudo grants only that deployment script. Tests cover shell-command injection rejection, mutable-tag rejection, another repository's image, and rollback behavior.
+
+**Network trade-off:** GitHub-hosted runners have changing public IPs. The default SSH example allows TCP 22 from `0.0.0.0/0`; the forced command and dedicated key restrict what an authenticated client can do. TCP 8080 remains restricted to the configured client `/32`. Review this exposure before apply. For production, prefer the OIDC/SSM mode or private connectivity/static runner egress with a narrower SSH range. Host keys are pinned, deployment is serialized, and a failed post-switch health check restores the previous container in both modes.
+
+The new project-based account can impose a fixed region. Use that region consistently in Terraform, the state backend and GitHub variables; `us-east-1` elsewhere in this README is the standard-account example. Existing manually created state buckets can be reused with a dedicated key; initialization and validation of a backend-only scratch directory do not provision the application. The actual deployment code lives in this repository's `infra/` directory.
 
 ## Kubernetes deployment and rollback
 
@@ -407,7 +440,7 @@ The timer runs every five minutes with a small random delay. `SuccessExitStatus=
 - **Python/FastAPI:** familiar, readable code with native ASGI lifecycle handling. One Uvicorn worker per container keeps counters process-local; scale containers instead of adding workers whose registries would require a multiprocess metric design.
 - **Alpine and multi-stage wheels:** a digest-pinned Python image has a small runtime and supports a Python-based HEALTHCHECK without adding curl. BuildKit mounts built wheels during installation, so the runtime image does not retain wheel archives. Native dependencies must have compatible musl wheels; the build fails rather than silently installing unpinned compilers.
 - **EC2 plus separate local Kubernetes:** EC2 directly demonstrates the requested bootstrap, IAM, SSM, logging, and rollback responsibilities at a small cost. ECS could reduce host maintenance; EKS suits a broader Kubernetes platform but adds control-plane cost and complexity that the assessment does not need.
-- **Tags and secrets:** SHA tags identify source, SemVer tags aid review, and digest deployment identifies exact content. GitHub OIDC and the EC2 instance role replace static AWS keys. Local secrets stay in ignored `.env`; Kubernetes secrets are generated at runtime.
+- **Tags and secrets:** SHA tags identify source, SemVer tags aid review, and digest deployment identifies exact content. GitHub OIDC (SSM mode), the restricted deployment key (SSH mode), and the EC2 instance role avoid static AWS access keys. Local secrets stay in ignored `.env`; Kubernetes secrets are generated at runtime.
 - **Metric/log cardinality:** metrics use route templates and collapse unknown URLs into `__unmatched__`; uncommon HTTP methods become `OTHER`. Loki indexes bounded service/container identity and log level. Path, status, timestamp, and version stay as JSON fields for query-time filtering; IDs, arbitrary URLs, and tokens never become labels.
 - **Local retention/storage:** named volumes and filesystem Loki make the demo reproducible. Production needs durable object storage, capacity planning, authentication, backups, and alert delivery.
 
@@ -421,7 +454,7 @@ Node Exporter mounts `/proc`, `/sys`, and `/` read-only and joins the host PID n
 
 Alloy runs as root to read the Docker socket, mounted read-only, and discovers every container **in this Compose project**. A read-only socket mount still allows powerful Docker API calls: it is not an API authorization boundary. Production should use a restricted socket proxy or another collection mechanism. Project-scoped discovery avoids ingesting unrelated applications' logs on a shared developer machine. No collector is exposed on a host port.
 
-Image/runtime versions and Actions revisions are pinned; Trivy gates CRITICAL findings and Dependabot proposes updates. The instance role scopes CloudWatch permissions to its log group; the deployment role targets one EC2 instance. S3 state is encrypted, versioned, locked, TLS-only, and blocked from public access. Terraform state remains sensitive; never commit it or supply credentials through backend files. The default AWS VPC and a single public instance are assessment simplifications.
+Image/runtime versions and Actions revisions are pinned; Trivy gates CRITICAL findings and Dependabot proposes updates. The instance role scopes CloudWatch permissions to its log group; in SSM mode the deployment role targets one EC2 instance. In SSH mode the dedicated key is limited to invoking the same deployment script for the configured image repository. S3 state is encrypted, versioned, locked, TLS-only, and blocked from public access. Terraform state remains sensitive; never commit it or supply credentials through backend files. The default AWS VPC and a single public instance are assessment simplifications.
 
 ## Rough monthly AWS cost
 

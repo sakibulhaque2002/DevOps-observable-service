@@ -12,7 +12,11 @@ flock -w 300 9
 # Root-owned file generated from non-secret Terraform settings.
 # shellcheck source=/dev/null
 source "${DEPLOY_CONFIG_FILE:-/etc/devops/service.env}"
-: "${AWS_REGION:?}" "${LOG_GROUP:?}" "${APP_ENVIRONMENT:?}"
+: "${AWS_REGION:?}" "${LOG_GROUP:?}" "${APP_ENVIRONMENT:?}" "${IMAGE_REPOSITORY:?}"
+if [[ $image != "$IMAGE_REPOSITORY":* && $image != "$IMAGE_REPOSITORY"@sha256:* ]]; then
+  echo "Image must belong to the configured application repository." >&2
+  exit 2
+fi
 
 run_container() {
   local name=$1 port=$2

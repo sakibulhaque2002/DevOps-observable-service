@@ -1,5 +1,7 @@
 locals {
-  name = "devops-task-${var.environment}"
+  name             = "devops-task-${var.environment}"
+  use_oidc         = var.deployment_method == "ssm"
+  image_repository = regex("^(ghcr\\.io/[a-z0-9._/-]+)(:|@)", var.app_image)[0]
 }
 
 data "aws_caller_identity" "current" {}
@@ -28,7 +30,7 @@ resource "aws_cloudwatch_log_group" "app" {
 
 resource "aws_security_group" "app" {
   name_prefix = "${local.name}-"
-  description = "Application HTTP only; administration uses outbound SSM"
+  description = var.deployment_method == "ssh" ? "Application HTTP and forced-command SSH deployment" : "Application HTTP only; administration uses outbound SSM"
   vpc_id      = data.aws_vpc.default.id
 }
 resource "aws_vpc_security_group_ingress_rule" "http" {
@@ -46,6 +48,16 @@ resource "aws_vpc_security_group_egress_rule" "https" {
   ip_protocol       = "tcp"
   from_port         = 443
   to_port           = 443
+}
+
+resource "aws_vpc_security_group_ingress_rule" "ssh" {
+  count             = var.deployment_method == "ssh" ? 1 : 0
+  security_group_id = aws_security_group.app.id
+  description       = "Dedicated forced-command deployment key; no interactive login"
+  cidr_ipv4         = var.ssh_allowed_cidr
+  ip_protocol       = "tcp"
+  from_port         = 22
+  to_port           = 22
 }
 
 resource "aws_iam_role" "instance" {
@@ -94,11 +106,15 @@ resource "aws_instance" "app" {
   }
   user_data_replace_on_change = true
   user_data = templatefile("${path.module}/user-data.sh.tftpl", {
-    region        = var.aws_region
-    log_group     = aws_cloudwatch_log_group.app.name
-    environment   = var.environment
-    image         = var.app_image
-    deploy_script = filebase64("${path.module}/../scripts/deploy-container.sh")
+    region           = var.aws_region
+    log_group        = aws_cloudwatch_log_group.app.name
+    environment      = var.environment
+    image            = var.app_image
+    image_repository = local.image_repository
+    deploy_script    = filebase64("${path.module}/../scripts/deploy-container.sh")
+    ssh_enabled      = var.deployment_method == "ssh"
+    ssh_public_key   = var.ssh_public_key
+    ssh_dispatch     = filebase64("${path.module}/../scripts/ssh-dispatch.sh")
   })
   metadata_options {
     http_endpoint               = "enabled"
@@ -117,17 +133,18 @@ resource "aws_instance" "app" {
 }
 
 resource "aws_iam_openid_connect_provider" "github" {
-  count          = var.create_github_oidc_provider ? 1 : 0
+  count          = local.use_oidc && var.create_github_oidc_provider ? 1 : 0
   url            = "https://token.actions.githubusercontent.com"
   client_id_list = ["sts.amazonaws.com"]
 }
 
 locals {
-  oidc_arn = var.create_github_oidc_provider ? aws_iam_openid_connect_provider.github[0].arn : "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com"
+  oidc_arn = local.use_oidc ? (var.create_github_oidc_provider ? aws_iam_openid_connect_provider.github[0].arn : "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com") : null
 }
 
 resource "aws_iam_role" "github_deploy" {
-  name = "${local.name}-github-deploy"
+  count = local.use_oidc ? 1 : 0
+  name  = "${local.name}-github-deploy"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -142,8 +159,9 @@ resource "aws_iam_role" "github_deploy" {
 }
 
 resource "aws_iam_role_policy" "github_deploy" {
-  name = "deploy-one-instance-via-ssm"
-  role = aws_iam_role.github_deploy.id
+  count = local.use_oidc ? 1 : 0
+  name  = "deploy-one-instance-via-ssm"
+  role  = aws_iam_role.github_deploy[0].id
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -157,4 +175,14 @@ resource "aws_iam_role_policy" "github_deploy" {
       { Effect = "Allow", Action = "ssm:GetCommandInvocation", Resource = "*" }
     ]
   })
+}
+
+moved {
+  from = aws_iam_role.github_deploy
+  to   = aws_iam_role.github_deploy[0]
+}
+
+moved {
+  from = aws_iam_role_policy.github_deploy
+  to   = aws_iam_role_policy.github_deploy[0]
 }
