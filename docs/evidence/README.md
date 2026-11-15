@@ -7,6 +7,7 @@ Local evidence was generated on November 14, 2026; AWS evidence on November 16, 
 - `kubernetes-requests.txt`: 320 actual requests through the Kubernetes Service, zero failures, versions 1.0.0 and 1.0.1 observed.
 - `github-release.txt`: successful PR CI, merged PR, multi-architecture publication/scans, exact digest, and explicit cloud-deployment skip.
 - `local-verification.txt`: final local checks and measured image size, recorded after the final image rebuild.
+- `submission-hardening.txt`: November 16 follow-up verification of enforced GitHub PR checks, the reused S3 bucket's TLS-only policy, health-probe-independent error queries, and all-container discovery configuration with a live assessment log probe.
 - `aws-plan.txt`, `aws-apply.txt`: actual Sydney plan and successful apply creating 9 resources. The existing private, encrypted, versioned S3 bucket uses a separate application state key with native locking.
 - `aws-rollback.txt`: the real EC2 deployment script switched real Docker containers, encountered 30 injected post-switch probe failures, restored the previous image, and verified its health. The injection simulates a failing health probe/transport; the app itself was not changed to return errors.
 - `cloudwatch-logs.txt`: actual structured application logs retrieved from CloudWatch before deletion.

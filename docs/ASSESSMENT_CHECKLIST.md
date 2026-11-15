@@ -22,6 +22,10 @@ Use this to track actual evidence; do not mark a cloud step complete from local 
 - [x] Three actual dashboard screenshots and error-investigation walkthrough.
 - [x] Bash health collector: JSON, thresholds, exit codes, rotation, help, ShellCheck and timer.
 - [x] Architecture, design decisions, deployment/rollback, security, costs and improvements.
+- [x] Short AI-assistance disclosure describing its use and actual verification.
+- [x] Error-rate queries exclude probes; alert regressions are checked in CI.
+- [x] All-container Docker log discovery by default; optional project filter for shared workstations.
+- [x] Enforced main-branch PR/CI checks and verified TLS-only policy on the reused S3 bucket.
 - [x] Push the commits and obtain a successful GitHub Actions release/image-publication run.
 - [x] Verify public GHCR package access and anonymous image pull.
 - [x] Confirm active AWS Free plan, available credits, and zero out-of-pocket budget compatibility.

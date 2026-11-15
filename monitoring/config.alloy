@@ -6,16 +6,33 @@ logging {
 discovery.docker "containers" {
   host             = "unix:///var/run/docker.sock"
   refresh_interval = "5s"
-  filter {
-    name   = "label"
-    values = ["com.docker.compose.project=devops-observable"]
-  }
 }
 
 discovery.relabel "containers" {
   targets = discovery.docker.containers.targets
+  // Compose defaults this to ".*": include containers without Compose labels too.
+  // Shared workstations can opt into a narrower project regex in their local .env.
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_project"]
+    regex         = sys.env("DOCKER_LOG_PROJECT_REGEX")
+    action        = "keep"
+  }
+  rule {
+    target_label = "service"
+    replacement  = "docker"
+  }
+  rule {
+    target_label = "project"
+    replacement  = "standalone"
+  }
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_project"]
+    regex         = "(.+)"
+    target_label  = "project"
+  }
   rule {
     source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    regex         = "(.+)"
     target_label  = "service"
   }
   rule {

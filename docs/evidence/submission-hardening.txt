@@ -1,0 +1,34 @@
+Submission hardening verification — November 16, 2026 (Asia/Dhaka)
+
+{
+  "verified_at": "2026-11-16T03:15:11.173302+06:00",
+  "state_bucket_tls_deny_verified": true,
+  "terraform_state_resources": 0,
+  "main_protection": {
+    "required_checks": [
+      "Python lint, tests and coverage",
+      "Build, runtime smoke test and critical vulnerability gate",
+      "Dockerfile, Bash, Terraform and Kubernetes validation"
+    ],
+    "up_to_date_branch_required": true,
+    "enforced_for_admins": true,
+    "pull_request_required": true,
+    "independent_approvals_required": 0,
+    "force_push_allowed": false,
+    "deletion_allowed": false
+  }
+}
+
+The reused S3 state bucket previously had no bucket policy. A TLS-only explicit deny was added and read back through AWS. No access grants were added; Terraform still reads the empty state. This policy change did not recreate application resources.
+
+Local verification:
+- 26 Python tests passed; application coverage 94.69%.
+- Three Prometheus alert regression cases passed. The original rules failed all three cases.
+- The actual generated dashboard error expression returned 10% for 10 failing and 90 successful user requests despite 10,000 successful health probes per sample interval.
+- Alloy configuration validated with the default all-project regex.
+- A temporary docker-run probe without a Compose service label was collected as service=docker; the probe was removed afterward.
+- Live local collection retains the documented project override to avoid unrelated workstation logs; the submitted Compose default is all containers.
+- All four Prometheus targets were up after reloading the configuration.
+- Ruff lint/format and actionlint passed.
+
+Existing November 14 screenshots and November 16 cloud deployment evidence remain historical records. The updated queries exclude health probes and the Application logs panel now filters by project and service.

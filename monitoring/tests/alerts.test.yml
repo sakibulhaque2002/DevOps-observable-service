@@ -1,0 +1,55 @@
+rule_files:
+  - ../alerts.yml
+evaluation_interval: 1m
+
+tests:
+  - name: Frequent healthy probes must not hide sustained user errors
+    interval: 1m
+    input_series:
+      - series: 'http_requests_total{job="app",path="/",status="200"}'
+        values: '0+90x10'
+      - series: 'http_requests_total{job="app",path="/",status="503"}'
+        values: '0+10x10'
+      - series: 'http_errors_total{job="app",path="/",status="503"}'
+        values: '0+10x10'
+      - series: 'http_requests_total{job="app",path="/health",status="200"}'
+        values: '0+10000x10'
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: HighApplicationErrorRate
+        exp_alerts: []
+      - eval_time: 8m
+        alertname: HighApplicationErrorRate
+        exp_alerts:
+          - exp_labels: {severity: warning}
+            exp_annotations:
+              summary: More than 5% of requests fail with 5xx
+              description: "At least 20 non-health requests in five minutes are required. Correlate the Application logs panel with path/status metrics."
+
+  - name: Probe traffic must not satisfy the minimum user request count
+    interval: 1m
+    input_series:
+      - series: 'http_requests_total{job="app",path="/",status="503"}'
+        values: '0+1x10'
+      - series: 'http_errors_total{job="app",path="/",status="503"}'
+        values: '0+1x10'
+      - series: 'http_requests_total{job="app",path="/health",status="200"}'
+        values: '0+10x10'
+    alert_rule_test:
+      - eval_time: 8m
+        alertname: HighApplicationErrorRate
+        exp_alerts: []
+
+  - name: Failed probes must not count as user request errors
+    interval: 1m
+    input_series:
+      - series: 'http_requests_total{job="app",path="/",status="200"}'
+        values: '0+100x10'
+      - series: 'http_requests_total{job="app",path="/health",status="503"}'
+        values: '0+100x10'
+      - series: 'http_errors_total{job="app",path="/health",status="503"}'
+        values: '0+100x10'
+    alert_rule_test:
+      - eval_time: 8m
+        alertname: HighApplicationErrorRate
+        exp_alerts: []
