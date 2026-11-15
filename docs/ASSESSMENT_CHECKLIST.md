@@ -21,7 +21,7 @@ Use this to track actual evidence; do not mark a cloud step complete from local 
 - [x] Four alert rules with threshold/duration explanations.
 - [x] Three actual dashboard screenshots and error-investigation walkthrough.
 - [x] Bash health collector: JSON, thresholds, exit codes, rotation, help, ShellCheck and timer.
-- [x] Architecture, design decisions, deployment/rollback, security, costs, improvements and AI-use note.
+- [x] Architecture, design decisions, deployment/rollback, security, costs and improvements.
 - [x] Push the commits and obtain a successful GitHub Actions release/image-publication run.
 - [x] Verify public GHCR package access and anonymous image pull.
 - [x] Confirm active AWS Free plan, available credits, and zero out-of-pocket budget compatibility.

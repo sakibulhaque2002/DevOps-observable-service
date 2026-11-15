@@ -486,7 +486,3 @@ Pricing references checked November 14, 2026: [EC2 example rates](https://docs.a
 ## What I would improve with more time
 
 Add a reverse proxy/load balancer for uninterrupted EC2 traffic, independent environment deployment approvals, Cosign signing and verification, an Alertmanager receiver, service-level objectives and burn-rate alerts, network policy and disruption budgets, a durable production monitoring deployment, automated recovery exercises, and workload-based resource tuning. Replace default-VPC assumptions with a reusable network module when the target environment warrants it.
-
-## AI assistance
-
-OpenAI Codex assisted with implementation, configuration, tests, documentation, and local and AWS verification. The repository distinguishes generated configuration, mocked checks, real local evidence, and actual cloud evidence. The submitter must review the changes and be able to explain each part; AI assistance does not substitute for actual deployment results.
